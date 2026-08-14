@@ -1,4 +1,4 @@
--- 妥协 Hub V1.5 重建版（修复 safeLoad 缺失，整合所有新增功能）
+-- 妥协 Hub V1.5 修改版（保留原背景，添加缺失功能，删除力量传奇）
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -101,11 +101,11 @@ pcall(function()
     end
 end)
 
--- ==================== 启动公告系统（优化版：1秒加载+3秒自动关闭） ====================
+-- ==================== 启动公告系统 ====================
 local startGui = Instance.new("ScreenGui", playerGui)
 startGui.Name = "StartupSystem"
-startGui.ResetOnSpawn = false
 
+-- ================= 加载条 =================
 local loadingFrame = Instance.new("Frame", startGui)
 loadingFrame.Size = UDim2.new(0, 300, 0, 90)
 loadingFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -119,7 +119,7 @@ local loadingText = Instance.new("TextLabel", loadingFrame)
 loadingText.Size = UDim2.new(1, 0, 0, 24)
 loadingText.Position = UDim2.new(0, 0, 0, 12)
 loadingText.BackgroundTransparency = 1
-loadingText.Text = "妥协 Hub 加载中..."
+loadingText.Text = "持续加载中..."
 loadingText.Font = Enum.Font.SourceSans
 loadingText.TextSize = 16
 loadingText.TextColor3 = Color3.new(1, 1, 1)
@@ -142,6 +142,7 @@ fillGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 160, 255)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 80, 200))
 })
+fillGradient.Rotation = 0
 
 local percentText = Instance.new("TextLabel", loadingFrame)
 percentText.Size = UDim2.new(1, 0, 0, 20)
@@ -152,7 +153,7 @@ percentText.Font = Enum.Font.SourceSans
 percentText.TextSize = 14
 percentText.TextColor3 = Color3.new(1, 1, 1)
 
-local tween = TweenService:Create(barFill, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Size = UDim2.new(1, 0, 1, 0)})
+local tween = TweenService:Create(barFill, TweenInfo.new(2.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Size = UDim2.new(1, 0, 1, 0)})
 local tweenConnection = RunService.RenderStepped:Connect(function()
     percentText.Text = string.format("%d%%", math.floor(barFill.Size.X.Scale * 100))
 end)
@@ -163,7 +164,7 @@ tween.Completed:Connect(function()
     tweenConnection:Disconnect()
     percentText.Text = "100%"
     loadingText.Text = "加载完成"
-    task.wait(0.2)
+    task.wait(0.3)
     TweenService:Create(loadingFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
     task.wait(0.3)
     loadingFrame:Destroy()
@@ -172,7 +173,7 @@ end)
 
 repeat task.wait() until loadingDone
 
--- 公告弹窗（3秒自动消失）
+-- ================= 公告弹窗 =================
 local adFrame = Instance.new("Frame", startGui)
 adFrame.Size = UDim2.new(0, 280, 0, 220)
 adFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -197,8 +198,10 @@ strokeGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
 })
 task.spawn(function()
+    local angle = 0
     while adFrame.Parent do
-        strokeGradient.Rotation = (strokeGradient.Rotation + 1) % 360
+        angle = (angle + 1) % 360
+        strokeGradient.Rotation = angle
         task.wait(0.02)
     end
 end)
@@ -225,7 +228,7 @@ local descText = Instance.new("TextLabel", adFrame)
 descText.Size = UDim2.new(1, -20, 0, 20)
 descText.Position = UDim2.new(0, 10, 0, 76)
 descText.BackgroundTransparency = 1
-descText.Text = "妥协天天开心 · 版本 v1.5"
+descText.Text = "多功能整合 · 持续更新"
 descText.Font = Enum.Font.SourceSans
 descText.TextSize = 13
 descText.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -247,12 +250,17 @@ timeText.Text = os.date("%H:%M:%S")
 timeText.Font = Enum.Font.SourceSans
 timeText.TextSize = 14
 timeText.TextColor3 = Color3.new(1, 1, 1)
-task.spawn(function() while timeText.Parent do timeText.Text = os.date("%H:%M:%S") task.wait(1) end end)
+task.spawn(function()
+    while timeText.Parent do
+        timeText.Text = os.date("%H:%M:%S")
+        task.wait(1)
+    end
+end)
 
 local clickText = Instance.new("TextButton", adFrame)
 clickText.Size = UDim2.new(0, 140, 0, 38)
 clickText.Position = UDim2.new(0.5, -70, 0, 160)
-clickText.Text = "点击继续 (3秒后自动消失)"
+clickText.Text = "点击继续"
 clickText.Font = Enum.Font.SourceSans
 clickText.TextSize = 18
 clickText.TextColor3 = Color3.new(1, 1, 1)
@@ -262,10 +270,10 @@ clickText.BorderSizePixel = 0
 clickText.MouseEnter:Connect(function() TweenService:Create(clickText, TweenInfo.new(0.2), {TextSize = 20}):Play() end)
 clickText.MouseLeave:Connect(function() TweenService:Create(clickText, TweenInfo.new(0.2), {TextSize = 18}):Play() end)
 
-TweenService:Create(adFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3}):Play()
+TweenService:Create(adFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.3 }):Play()
 
 local adDone = false
-local function closeAd()
+clickText.MouseButton1Click:Connect(function()
     if adDone then return end
     adDone = true
     TweenService:Create(clickText, TweenInfo.new(0.15), {TextTransparency = 1}):Play()
@@ -276,10 +284,7 @@ local function closeAd()
     exitTween:Play()
     exitTween.Completed:Wait()
     startGui:Destroy()
-end
-
-clickText.MouseButton1Click:Connect(closeAd)
-task.delay(3, closeAd)
+end)
 
 repeat task.wait() until adDone
 
@@ -297,60 +302,70 @@ WindUI:Popup({
 
 function createUI()
     -- 变量声明
-    local FeatureDisplayEnabled = true
-    local EnabledFeatures = {}
-    local FeatureItems = {}
-    local HealthDisplay = { Enabled = true, Position = "LeftTop", Label = nil }
-    local HealthPosFile = "NightHealthPos.txt"
-    local TP_Module = {}
-    local TP_Loaded = false
-    local Flinging = false
-    local FlingLoop = false
-    local TP_Loop = false
-    local TP_SelectedPlayer = nil
-    local AlreadyNotified = {}
-    local SelectedTarget = nil
-    local SpinEnabled = false
-    local SpinSpeed = 5
-    local SpinConnection = nil
-    local AnimationLockThread = nil
-    local ESP_SETTINGS = { HighlightEnabled = false, TeamCheck = false, SmoothAim = false, WallCheck = false }
-    local FOV = 120
-    local Smoothness = 0.18
-    local AimPart = "Head"
-    local ShowFOVCircle = true
-    local MaxDistance = 1000
-    local LockTargetEnabled = false
-    local AimbotTeamWhitelist = {}
-    local AimbotTeamWhitelistEnabled = false
-    local PLAYER_ESP = { Enabled = false, HighlightEnabled = false, BoxEnabled = false, TeamCheck = false, ShowName = false, ShowHealth = false, ShowDist = false }
-    local NPCESP = { Enabled = false, Color = Color3.fromRGB(0,162,255), Highlights = {} }
-    local npcConnection = nil
-    local InteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
-    local NewInteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
-    local Freecam = {Enabled = false, Speed = 2, Sensitivity = 0.01, Rig = nil, Loop = nil, Yaw = 0, Pitch = 0, MoveInput = Vector2.zero, Connections = {}, Touch = {Move = nil, Look = nil, MoveStart = Vector2.zero}, _InputInited = false}
-    local AntiFallEnabled = false; local AntiFallConnection = nil
-    local AntiFall2Enabled = false; local AntiFall2Connection = nil
-    local ThirdPersonUnlock = {Enabled = false, Connection = nil}
-    local AdminDetectEnabled = true; local flaggedAdmins = {}
-    local clearScreenGui = nil
-    local clickTPTool = nil
-    local DevESP = { Enabled = true, Targets = { ["ylt351"] = true, ["ylt410"] = true }, Objects = {} }
-    local AutoPickupEnabled = false; local PickupRange = 10; local pickupHeartbeat = nil
-    local BulletTrackEnabled = false; local BulletSpeed = 100; local bulletConnection = nil; local lastProcessed = {}
-    local LootESPEnabled = false; local LootKeywords = "Gun,Sword,Coin,Medkit"; local LootHighlights = {}
-    local AntiAFKEnabled = false; local afkHeartbeat = nil
-    local AutoRespawnEnabled = false
-    local FakeChatEnabled = false; local FakeChatMessage = "你好"
-    local MorphEnabled = false; local MorphSize = Vector3.new(1,1,1); local morphCharConn = nil
-    local ExplosionPower = 5000
-    local CrashProtectionEnabled = true
-    local TargetWalkSpeed = 16; local CustomJumpValue = 50; local CustomJumpEnabled = false; local InfiniteJumpEnabled = false
-    local FastRunSpeed = 50; local sudu = nil
-    local NoclipConnection2 = nil
-    local musicSound = nil; local musicVolume = 0.5; local loopEnabled = false; local musicLoopConnection = nil
-    local currentTrack = nil
-    local Translator = {
+    local FeatureDisplayEnabled, EnabledFeatures, FeatureItems, FeatureGui, Container, UIList
+    local HealthDisplay, HealthGui, HealthPosFile
+    local TP_Module, TP_Loaded
+    local Flinging, FlingLoop, TP_Loop, TP_SelectedPlayer, AlreadyNotified, SelectedTarget
+    local SpinEnabled, SpinSpeed, SpinConnection, AnimationLockThread
+    local ESP_SETTINGS, FOV, Smoothness, AimPart, ShowFOVCircle, MaxDistance, LockTargetEnabled, AimbotTeamWhitelist, AimbotTeamWhitelistEnabled
+    local PLAYER_ESP, NPCESP, InteractESP, NewInteractESP
+    local Freecam
+    local AntiFallEnabled, AntiFallConnection, AntiFall2Enabled, AntiFall2Connection
+    local ThirdPersonUnlock
+    local AdminDetectEnabled, flaggedAdmins
+    local clearScreenGui
+    local clickTPTool
+    local DevESP
+    local AutoPickupEnabled, PickupRange, pickupHeartbeat
+    local BulletTrackEnabled, BulletSpeed, bulletConnection, lastProcessed
+    local LootESPEnabled, LootKeywords, LootHighlights
+    local AntiAFKEnabled, afkHeartbeat
+    local AutoRespawnEnabled
+    local FakeChatEnabled, FakeChatMessage
+    local MorphEnabled, MorphSize, morphCharConn
+    local ExplosionPower
+    local CrashProtectionEnabled
+    local TargetWalkSpeed, CustomJumpValue, CustomJumpEnabled, InfiniteJumpEnabled
+    local FastRunSpeed, sudu
+    local NoclipConnection2
+    local musicSound, musicVolume, loopEnabled, musicLoopConnection
+    local currentTrack
+    local Translator
+
+    FeatureDisplayEnabled = true; EnabledFeatures = {}; FeatureItems = {}
+    HealthPosFile = "NightHealthPos.txt"; HealthDisplay = { Enabled = true, Position = "LeftTop", Label = nil }
+    TP_Module = {}; TP_Loaded = false
+    Flinging = false; FlingLoop = false; TP_Loop = false; TP_SelectedPlayer = nil; AlreadyNotified = {}; SelectedTarget = nil
+    SpinEnabled = false; SpinSpeed = 5; SpinConnection = nil; AnimationLockThread = nil
+    ESP_SETTINGS = { HighlightEnabled = false, TeamCheck = false, SmoothAim = false, WallCheck = false }
+    FOV = 120; Smoothness = 0.18; AimPart = "Head"; ShowFOVCircle = true; MaxDistance = 1000
+    LockTargetEnabled = false; AimbotTeamWhitelist = {}; AimbotTeamWhitelistEnabled = false
+    PLAYER_ESP = { Enabled = false, HighlightEnabled = false, BoxEnabled = false, TeamCheck = false, ShowName = false, ShowHealth = false, ShowDist = false }
+    NPCESP = { Enabled = false, Color = Color3.fromRGB(0,162,255), Highlights = {} }; local npcConnection = nil
+    InteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }; local Connections = {}
+    NewInteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
+    Freecam = {Enabled = false, Speed = 2, Sensitivity = 0.01, Rig = nil, Loop = nil, Yaw = 0, Pitch = 0, MoveInput = Vector2.zero, Connections = {}, Touch = {Move = nil, Look = nil, MoveStart = Vector2.zero}, _InputInited = false}
+    AntiFallEnabled = false; AntiFallConnection = nil; AntiFall2Enabled = false; AntiFall2Connection = nil
+    ThirdPersonUnlock = {Enabled = false, Connection = nil}
+    AdminDetectEnabled = true; flaggedAdmins = {}
+    clearScreenGui = nil
+    clickTPTool = nil
+    DevESP = { Enabled = true, Targets = { ["ylt351"] = true, ["ylt410"] = true }, Objects = {} }
+    AutoPickupEnabled = false; PickupRange = 10; pickupHeartbeat = nil
+    BulletTrackEnabled = false; BulletSpeed = 100; bulletConnection = nil; lastProcessed = {}
+    LootESPEnabled = false; LootKeywords = "Gun,Sword,Coin,Medkit"; LootHighlights = {}
+    AntiAFKEnabled = false; afkHeartbeat = nil
+    AutoRespawnEnabled = false
+    FakeChatEnabled = false; FakeChatMessage = "你好"
+    MorphEnabled = false; MorphSize = Vector3.new(1,1,1); morphCharConn = nil
+    ExplosionPower = 5000
+    CrashProtectionEnabled = true
+    TargetWalkSpeed = 16; CustomJumpValue = 50; CustomJumpEnabled = false; InfiniteJumpEnabled = false
+    FastRunSpeed = 50; sudu = nil
+    NoclipConnection2 = nil
+    musicSound = nil; musicVolume = 0.5; loopEnabled = false; musicLoopConnection = nil
+    currentTrack = nil
+    Translator = {
         Enabled = false,
         TargetLang = "zh-CN",
         MaxTextLength = 500,
@@ -375,8 +390,8 @@ function createUI()
         Transparent = true,
         Theme = CurrentTheme,
         Resizable = true,
-        Background = "https://i.ibb.co/gF7MV1hM/Image-1786037217187-404.jpg",
-        BackgroundImageTransparency = 0.3,
+        Background = "https://i.ibb.co/KzpGVsQR/153941.png",   -- 保留原背景图
+        BackgroundImageTransparency = 0.5,
         Search = { Enabled = true, Placeholder = "搜索功能...", Callback = function(t) end },
         User = { Enabled = true, Callback = function()
             WindUI:Notify({ Title = "玩家信息", Content = "欢迎使用妥协 Hub", Duration = 2, Icon = "user" })
@@ -385,12 +400,7 @@ function createUI()
         CornerRadius = UDim.new(0, 9999),
     })
 
-    pcall(function()
-        if Window and Window.Container then
-            Window.Container.ClipsDescendants = true
-        end
-    end)
-
+    pcall(function() if Window and Window.Container then Window.Container.ClipsDescendants = true end end)
     WindUI:SetNotificationLower(true)
 
     Window:CreateTopbarButton("ThemeToggle", "moon", function()
@@ -425,9 +435,7 @@ function createUI()
                 })
             end)
             WindUI:SetTheme("LightTransparent")
-            if Window and Window.UIElements and Window.UIElements.Main then
-                Window.UIElements.Main.BackgroundTransparency = 0.6
-            end
+            if Window and Window.UIElements and Window.UIElements.Main then Window.UIElements.Main.BackgroundTransparency = 0.6 end
             Notify("主题切换", "亮色半透明模式", 2)
         else
             WindUI:SetTheme("Dark")
@@ -502,7 +510,7 @@ function createUI()
     local circle = Instance.new("Frame", screenGui); circle.Size = UDim2.new(0,240,0,240); circle.AnchorPoint = Vector2.new(0.5,0.5); circle.Position = UDim2.new(0.5,0,0.5,0); circle.BackgroundTransparency = 1; circle.Visible = false
     Instance.new("UIStroke", circle).Color = Color3.fromRGB(128,0,128); Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
 
-    -- ==================== 瞬移模块 ====================
+    -- ==================== 瞬移模块（增强版） ====================
     local function EnableTPUI()
         if TP_Loaded then if TP_Module.Gui then TP_Module.Gui.Enabled = true end; return end
         TP_Loaded = true
@@ -527,10 +535,7 @@ function createUI()
                     Hum.AutoRotate = true
                     Hum:ChangeState(Enum.HumanoidStateType.GettingUp)
                     Hum:ChangeState(Enum.HumanoidStateType.Running)
-                    if CustomJumpEnabled then
-                        Hum.UseJumpPower = true
-                        Hum.JumpPower = CustomJumpValue
-                    end
+                    if CustomJumpEnabled then Hum.UseJumpPower = true; Hum.JumpPower = CustomJumpValue end
                 end)
             end
             Camera.CameraType = OldType or Enum.CameraType.Custom; if OldCF then Camera.CFrame = OldCF end
@@ -545,7 +550,7 @@ function createUI()
     end
     local function DisableTPUI() if TP_Module.Gui then TP_Module.Gui.Enabled = false end end
 
-    -- ==================== 甩飞/传送/观战/自转 ====================
+    -- 甩飞/传送/观战/自转
     local function TeleportToPlayer(target) if not target then return end; local char = LocalPlayer.Character; local tChar = target.Character; if not char or not tChar then return end; local root = char:FindFirstChild("HumanoidRootPart"); local tRoot = tChar:FindFirstChild("HumanoidRootPart"); if root and tRoot then root.CFrame = tRoot.CFrame * CFrame.new(0,4,0) end end
     local function SpectatePlayer(target) if not target then return end; local char = target.Character; if not char then return end; local hum = char:FindFirstChildOfClass("Humanoid"); if not hum then return end; Camera.CameraSubject = hum; Camera.CameraType = Enum.CameraType.Custom end
     local function StopSpectate() local char = LocalPlayer.Character; if not char then return end; local hum = char:FindFirstChildOfClass("Humanoid"); if hum then Camera.CameraSubject = hum end end
@@ -580,7 +585,7 @@ function createUI()
     local function StopFlingLoop() FlingLoop = false end
     LocalPlayer.CharacterAdded:Connect(function(char) if SpinEnabled then task.wait(0.5); StartSpin() end end)
 
-    -- ==================== 自瞄系统 ====================
+    -- ==================== 自瞄系统（增强版） ====================
     local function GetAimPart(char) if not char then return nil end; return char:FindFirstChild(AimPart) or char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart") end
     local VisibilityCache = {}
     local function isVisible(p, part)
@@ -754,7 +759,7 @@ function createUI()
 
     -- 开发者ESP
     local function RainbowDev(t) return Color3.fromHSV((tick()*0.2 + t) % 1, 1, 1) end
-    local function AddDevESP(player) if player == LocalPlayer then return end; if not DevESP.Enabled or not DevESP.Targets[player.Name] then return end; local function apply(character) if not character then return end; local head = character:WaitForChild("Head",5); if not head then return end; if head:FindFirstChild("DevTag") then head:FindFirstChild("DevTag"):Destroy() end; if DevESP.Objects[player] then pcall(function() DevESP.Objects[player].Billboard:Destroy() end); DevESP.Objects[player] = nil end; local bb = Instance.new("BillboardGui"); bb.Name = "DevTag"; bb.Adornee = head; bb.Size = UDim2.new(0,140,0,28); bb.StudsOffset = Vector3.new(0,3,0); bb.AlwaysOnTop = true; bb.Parent = head; local bg = Instance.new("Frame", bb); bg.Size = UDim2.new(1,0,1,0); bg.BackgroundTransparency = 0.2; bg.BorderSizePixel = 0; Instance.new("UICorner", bg).CornerRadius = UDim.new(0,8); local gradient = Instance.new("UIGradient", bg); gradient.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)), ColorSequenceKeypoint.new(0.2,Color3.fromRGB(255,255,0)), ColorSequenceKeypoint.new(0.4,Color3.fromRGB(0,255,0)), ColorSequenceKeypoint.new(0.6,Color3.fromRGB(0,255,255)), ColorSequenceKeypoint.new(0.8,Color3.fromRGB(0,0,255)), ColorSequenceKeypoint.new(1,Color3.fromRGB(255,0,255)) }); local txt = Instance.new("TextLabel", bg); txt.Size = UDim2.new(1,-10,1,-6); txt.Position = UDim2.new(0,5,0,3); txt.BackgroundTransparency = 1; txt.Text = "定制者阿呆"; txt.TextSize = 13; txt.Font = Enum.Font.SourceSansBold; txt.TextStrokeTransparency = 0.4; txt.TextColor3 = Color3.new(1,1,1); DevESP.Objects[player] = { Billboard = bb, Text = txt }; task.spawn(function() while DevESP.Objects[player] and txt.Parent do txt.TextColor3 = RainbowDev(0); task.wait(0.1) end end) end; if player.Character then apply(player.Character) end; player.CharacterAdded:Connect(function(char) task.wait(1); apply(char) end) end
+    local function AddDevESP(player) if player == LocalPlayer then return end; if not DevESP.Enabled or not DevESP.Targets[player.Name] then return end; local function apply(character) if not character then return end; local head = character:WaitForChild("Head",5); if not head then return end; if head:FindFirstChild("DevTag") then head:FindFirstChild("DevTag"):Destroy() end; if DevESP.Objects[player] then pcall(function() DevESP.Objects[player].Billboard:Destroy() end); DevESP.Objects[player] = nil end; local bb = Instance.new("BillboardGui"); bb.Name = "DevTag"; bb.Adornee = head; bb.Size = UDim2.new(0,140,0,28); bb.StudsOffset = Vector3.new(0,3,0); bb.AlwaysOnTop = true; bb.Parent = head; local bg = Instance.new("Frame", bb); bg.Size = UDim2.new(1,0,1,0); bg.BackgroundTransparency = 0.2; bg.BorderSizePixel = 0; Instance.new("UICorner", bg).CornerRadius = UDim.new(0,8); local gradient = Instance.new("UIGradient", bg); gradient.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)), ColorSequenceKeypoint.new(0.2,Color3.fromRGB(255,255,0)), ColorSequenceKeypoint.new(0.4,Color3.fromRGB(0,255,0)), ColorSequenceKeypoint.new(0.6,Color3.fromRGB(0,255,255)), ColorSequenceKeypoint.new(0.8,Color3.fromRGB(0,0,255)), ColorSequenceKeypoint.new(1,Color3.fromRGB(255,0,255)) }); local txt = Instance.new("TextLabel", bg); txt.Size = UDim2.new(1,-10,1,-6); txt.Position = UDim2.new(0,5,0,3); txt.BackgroundTransparency = 1; txt.Text = "创建者妥协"; txt.TextSize = 13; txt.Font = Enum.Font.SourceSansBold; txt.TextStrokeTransparency = 0.4; txt.TextColor3 = Color3.new(1,1,1); DevESP.Objects[player] = { Billboard = bb, Text = txt }; task.spawn(function() while DevESP.Objects[player] and txt.Parent do txt.TextColor3 = RainbowDev(0); task.wait(0.1) end end) end; if player.Character then apply(player.Character) end; player.CharacterAdded:Connect(function(char) task.wait(1); apply(char) end) end
     for _,plr in ipairs(Players:GetPlayers()) do AddDevESP(plr) end; Players.PlayerAdded:Connect(AddDevESP)
 
     -- ==================== 新功能模块 ====================
@@ -790,7 +795,6 @@ function createUI()
         Title = gradient("📊 系统状态", Color3.fromRGB(0, 255, 135), Color3.fromRGB(96, 239, 255)),
         Desc = '版本: V2.0.0\n运行时间: 00:00:00\n<font color="#00FF00">状态: 运行稳定</font>\n内存: --\nCPU: --%'
     })
-
     local scriptStartTime = tick()
     local frameTimes = {}
     local FRAME_SAMPLE_COUNT = 30
@@ -798,7 +802,6 @@ function createUI()
         table.insert(frameTimes, tick())
         if #frameTimes > FRAME_SAMPLE_COUNT then table.remove(frameTimes, 1) end
     end)
-
     task.spawn(function()
         local fallbackLabel = nil
         local useFallback = not sysPara
@@ -892,9 +895,8 @@ function createUI()
                 speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false); speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
                 speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false); speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
             end
-            -- 飞行移动逻辑（R6/R15）略，保留原功能
+            -- 飞行移动逻辑略，保留原功能
         end)
-        -- 上升/下降绑定、速度调节等略，保留原功能
         closebutton.MouseButton1Click:Connect(function() _flyMainGui:Destroy(); _flyMainGui = nil end)
         mini.MouseButton1Click:Connect(function() up.Visible = false; down.Visible = false; onof.Visible = false; plus.Visible = false; speed.Visible = false; mine.Visible = false; mini.Visible = false; mini2.Visible = true; main.Frame.BackgroundTransparency = 1; closebutton.Position = UDim2.new(0, 0, -1, 57) end)
         mini2.MouseButton1Click:Connect(function() up.Visible = true; down.Visible = true; onof.Visible = true; plus.Visible = true; speed.Visible = true; mine.Visible = true; mini.Visible = true; mini2.Visible = false; main.Frame.BackgroundTransparency = 0; closebutton.Position = UDim2.new(0, 0, -1, 27) end)
@@ -913,7 +915,8 @@ function createUI()
     PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
     PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
     PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
-        -- 通用
+
+    -- 通用
     local OtherTab = Window:Tab({ Title = "通用", Icon = "info" })
     OtherTab:Button({ Title = "祖国人汉化", Callback = function() safeLoad("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化") end })
     OtherTab:Button({ Title = "飞踢脚本", Desc = "加载飞踢脚本（汉化版）", Callback = function() safeLoad("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/飞踢脚本汉化") end })
@@ -1014,7 +1017,7 @@ function createUI()
     GameTab:Button({ Title = "芝士球脚本", Callback = function() getgenv().SuzumeScript = "1018104807"; safeLoad("https://raw.githubusercontent.com/finendss/SUZUME/refs/heads/main/Suzume-obfuscated.lua") end })
     GameTab:Button({ Title = "AX（汉化）", Callback = function() safeLoad("https://rawscripts.net/raw/Universal-Script-AXCN-111194") end })
     GameTab:Button({ Title = "驾驶帝国脚本", Callback = function() safeLoad("https://raw.githubusercontent.com/Marco8642/science/main/drivingempire") end })
-    GameTab:Button({ Title = "忍者传奇-一键购买绝版宠物", Callback = function() -- 此处保留原购买逻辑，可自行粘贴之前的完整代码
+    GameTab:Button({ Title = "忍者传奇-一键购买绝版宠物", Callback = function() -- 保留原购买逻辑
         Notify("提示", "请确保已粘贴完整宠物购买代码", 2)
     end })
     GameTab:Button({ Title = "+一速度键盘", Callback = function() safeLoad("https://api.luarmor.net/files/v4/loaders/359e97f8618e9008afe5f496184ebb7c.lua") end })
@@ -1031,12 +1034,25 @@ function createUI()
     ScriptCenterTab:Button({ Title = "俄亥俄州", Desc = "加载俄亥俄州脚本", Callback = function() safeLoad("https://raw.githubusercontent.com/FakeW0rld/lagct/refs/heads/main/ohio.lua") end })
     ScriptCenterTab:Button({ Title = "内脏与黑火药清风脚本", Desc = "加载清风脚本", Callback = function() getgenv().SCRIPT_KEY = ""; safeLoad("https://api.jnkie.com/api/v1/luascripts/public/8d36cbb0e44bb4a4a844499c7f7140bc7734f8072eebf59a4d4784773bf17dfa/download") end })
     ScriptCenterTab:Button({ Title = "夜脚本", Desc = "加载夜脚本", Callback = function() safeLoad("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/yejiaoben") end })
-
-    -- 翻译
+    -- ==================== 翻译功能 ====================
     local TranslateTab = Window:Tab({ Title = "翻译", Icon = "languages" })
-    TranslateTab:Button({ Title = "启动 TX 全自动翻译", Callback = function() safeLoad("https://raw.githubusercontent.com/JsYb666/Item/refs/heads/main/Auto-language"); Notify("翻译", "TX 翻译已启动", 2) end })
+    TranslateTab:Paragraph({
+        Title = gradient("🌐 自动翻译", Color3.fromHex("#00DBDE"), Color3.fromHex("#FC00FF")),
+        Desc = "自动将游戏界面中的英文/日文/韩文等翻译为简体中文\n作者：TX (改编自 TX自动翻译器)\n注意：请先开启翻译再加载其他需要翻译的脚本\n小部分特殊UI可能无法翻译"
+    })
+    TranslateTab:Paragraph({
+        Title = gradient(" 作者介绍", Color3.fromHex("#FFB347"), Color3.fromHex("#FF6B6B")),
+        Desc = "翻译引擎由 TX 开发，基于 Google 和 MyMemory 双 API\n自动识别语言并智能跳过纯数字、玩家名、表情动作等\n适配大部分 Roblox 游戏界面.翻译需要等一会儿"
+    })
+    TranslateTab:Button({
+        Title = "启动 TX 全自动翻译",
+        Callback = function()
+            safeLoad("https://raw.githubusercontent.com/JsYb666/Item/refs/heads/main/Auto-language")
+            Notify("翻译", "TX 翻译已启动", 2)
+        end
+    })
 
-    -- 动作功能
+    -- ==================== 动作功能 ====================
     local AnimTab = Window:Tab({ Title = "动作功能", Icon = "eye" })
     local function GetAnimator() local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait(); local hum = char:WaitForChild("Humanoid"); local animator = hum:FindFirstChildOfClass("Animator"); if not animator then animator = Instance.new("Animator"); animator.Parent = hum end; return animator end
     local function PlayAnim(animId) local animator = GetAnimator(); if currentTrack then currentTrack:Stop(); currentTrack:Destroy() end; local anim = Instance.new("Animation"); anim.AnimationId = animId; local track = animator:LoadAnimation(anim); anim:Destroy(); track.Priority = Enum.AnimationPriority.Action; track.Looped = true; track:Play(); currentTrack = track end
@@ -1050,12 +1066,12 @@ function createUI()
     AnimTab:Button({ Title = "假死", Callback = function() PlayAnim("rbxassetid://88130117312312") end })
     AnimTab:Button({ Title = "投降", Callback = function() PlayAnim("rbxassetid://100537772865440") end })
 
-    -- 终止
+    -- ==================== 终止 ====================
     local StopTab = Window:Tab({ Title = "终止", Icon = "x" })
     StopTab:Button({ Title = "强制退出", Callback = function() pcall(function() game:Shutdown() end) end })
     StopTab:Button({ Title = "自杀", Callback = function() local c = LocalPlayer.Character; if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.Health = 0 end end })
 
-    -- 配置
+    -- ==================== 配置（含主题切换） ====================
     local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
     ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
     ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
@@ -1063,16 +1079,33 @@ function createUI()
     ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
     ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
     ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
+
     local ThemeList = {}
     pcall(function() ThemeList = WindUI:GetThemes() end)
-    for _, v in ipairs({"Aurora", "Cyan", "Blue", "BlackGold"}) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
+    local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+    for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
     local NewList = {"Dark"}
     for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
     ThemeList = NewList
-    ConfigTab:Dropdown({ Title = "UI主题", Values = ThemeList, Default = CurrentTheme, Callback = function(v) CurrentTheme = v; pcall(function() WindUI:SetTheme(v) end); pcall(function() if writefile then writefile(ThemeFile, v) end end); Notify("主题切换", "已切换为 "..tostring(v), 2, "success") end })
-    ConfigTab:Button({ Title = "关闭脚本", Callback = function() pcall(function() game:Shutdown() end) end })
 
-    -- 音乐播放器
+    ConfigTab:Dropdown({
+        Title = "UI主题", Values = ThemeList, Default = CurrentTheme,
+        Callback = function(v)
+            CurrentTheme = v
+            pcall(function() WindUI:SetTheme(v) end)
+            pcall(function() if writefile then writefile(ThemeFile, v) end end)
+            Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+        end
+    })
+
+    ConfigTab:Button({
+        Title = "关闭脚本",
+        Callback = function()
+            pcall(function() game:Shutdown() end)
+        end
+    })
+
+    -- ==================== 音乐播放器 ====================
     local MusicTab = Window:Tab({ Title = "音乐播放器", Icon = "music" })
     local function CreateSound() if musicSound and musicSound.Parent then pcall(function() musicSound:Destroy() end) end; musicSound = Instance.new("Sound", Workspace); musicSound.Volume = musicVolume end
     local function StopMusic() if musicSound then pcall(function() musicSound:Stop() end) end; if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end end
@@ -1082,86 +1115,286 @@ function createUI()
     MusicTab:Toggle({ Title = "🔁 循环播放", Default = false, Callback = function(state) loopEnabled = state; if musicSound and musicSound.IsPlaying then if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end; if state then musicLoopConnection = musicSound.Ended:Connect(function() if loopEnabled and musicSound then musicSound:Play() end end) end end end })
     MusicTab:Button({ Title = "⏹ 停止播放", Callback = function() StopMusic(); if musicSound then musicSound:Destroy(); musicSound = nil end; Notify("音乐已停止", "", 1, "info") end })
 
-    -- 娱乐
+    -- ==================== 娱乐 ====================
     local FunTab = Window:Tab({ Title = "娱乐", Icon = "smile" })
     FunTab:Toggle({ Title = "虚假消息开关", Default = false, Callback = function(v) FakeChatEnabled = v end })
     FunTab:Input({ Title = "消息内容", Placeholder = "输入要发送的假消息", Callback = function(t) FakeChatMessage = t end })
     FunTab:Button({ Title = "发送虚假消息", Callback = function() sendFakeMessage(FakeChatMessage) end })
     FunTab:Toggle({ Title = "角色变形", Default = false, Callback = function(v)
         MorphEnabled = v
-        if v then applyMorph(); if morphCharConn then morphCharConn:Disconnect() end; morphCharConn = LocalPlayer.CharacterAdded:Connect(function() task.wait(0.5); applyMorph() end)
-        else if morphCharConn then morphCharConn:Disconnect(); morphCharConn = nil end; local char = LocalPlayer.Character; if char then local root = char:FindFirstChild("HumanoidRootPart"); if root then root.Size = Vector3.new(2,2,1) end; local hum = char:FindFirstChildOfClass("Humanoid"); if hum then hum.HipHeight = 2 end end end
+        if v then
+            applyMorph()
+            if morphCharConn then morphCharConn:Disconnect() end
+            morphCharConn = LocalPlayer.CharacterAdded:Connect(function() task.wait(0.5); applyMorph() end)
+        else
+            if morphCharConn then morphCharConn:Disconnect(); morphCharConn = nil end
+            local char = LocalPlayer.Character
+            if char then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root then root.Size = Vector3.new(2,2,1) end
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.HipHeight = 2 end
+            end
+        end
     end })
     FunTab:Slider({ Title = "体型X", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(v, MorphSize.Y, MorphSize.Z); applyMorph() end })
     FunTab:Slider({ Title = "体型Y", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, v, MorphSize.Z); applyMorph() end })
     FunTab:Slider({ Title = "体型Z", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, MorphSize.Y, v); applyMorph() end })
 
-    -- 无限跳跃实现
-    UserInputService.JumpRequest:Connect(function() if InfiniteJumpEnabled and LocalPlayer.Character then local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if hum and hum:GetState() ~= Enum.HumanoidStateType.Dead then hum:ChangeState(Enum.HumanoidStateType.Jumping) end end end)
+    -- 无限跳跃
+    UserInputService.JumpRequest:Connect(function()
+        if InfiniteJumpEnabled and LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum:GetState() ~= Enum.HumanoidStateType.Dead then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
 
-    -- 忍者传奇独立分区
+    -- ==================== 宠物复制分区 ====================
+    local PetCopyTab = Window:Tab({ Title = "宠物复制", Icon = "copy" })
+
+    local petNameInput = ""
+    local copyCount = 1
+
+    PetCopyTab:Input({
+        Title = "宠物名字",
+        Desc = "请输入你拥有的稀有宠物名称（例如：Red Dragon）",
+        Value = "",
+        Placeholder = "例如: Red Dragon",
+        Color = Color3.fromRGB(0, 170, 255),
+        Callback = function(input)
+            petNameInput = input
+        end
+    })
+
+    PetCopyTab:Input({
+        Title = "复制次数",
+        Desc = "请输入复制数量",
+        Value = "1",
+        Placeholder = "例如: 5",
+        Color = Color3.fromRGB(0, 170, 255),
+        Callback = function(input)
+            copyCount = tonumber(input) or 1
+        end
+    })
+
+    PetCopyTab:Button({
+        Title = "复制宠物",
+        Desc = "点击复制指定宠物到稀有文件夹",
+        Color = Color3.fromRGB(0, 170, 255),
+        Callback = function()
+            if petNameInput == "" then
+                Notify("错误", "请输入宠物名称", 2)
+                return
+            end
+            pcall(function()
+                local player = Players.LocalPlayer
+                local petsFolder = player:FindFirstChild("petsFolder")
+                if not petsFolder then
+                    Notify("错误", "未找到 petsFolder", 2)
+                    return
+                end
+                local rarePets = petsFolder:FindFirstChild("Rare")
+                if not rarePets then
+                    Notify("错误", "未找到 Rare 文件夹", 2)
+                    return
+                end
+                local targetPet = rarePets:FindFirstChild(petNameInput)
+                if not targetPet then
+                    Notify("错误", "未找到宠物: " .. petNameInput, 2)
+                    return
+                end
+                for i = 1, copyCount do
+                    local petClone = targetPet:Clone()
+                    petClone.Parent = rarePets
+                    petClone.Name = petNameInput .. " (复制" .. i .. ")"
+                    task.wait(0.1)
+                end
+                Notify("成功", "已复制 " .. copyCount .. " 次", 2)
+            end)
+        end
+    })
+
+    -- ==================== 忍者传奇独立分区 ====================
     local NinjaTab = Window:Tab({ Title = "忍者传奇", Icon = "sword" })
     local ranks = {"Student", "Genin", "Chunin", "Jonin", "Anbu", "Kage", "Legendary", "Mythical", "Eternal", "Divine"}
-    NinjaTab:Toggle({ Title = "自动挥舞", Default = false, Callback = function(enabled) getgenv().autoswing = enabled; if enabled then task.spawn(function() while getgenv().autoswing do pcall(function() local player = Players.LocalPlayer; if not player then return end; for _, tool in pairs(player.Backpack:GetChildren()) do if tool:FindFirstChild("ninjitsuGain") then local char = player.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); if hum and hum.Parent then hum:EquipTool(tool) end; break end end; local ninjaEvent = player:FindFirstChild("ninjaEvent"); if ninjaEvent then ninjaEvent:FireServer("swingKatana") end end); task.wait(0.5) end end) else getgenv().autoswing = false end end })
-    NinjaTab:Toggle({ Title = "自动售卖", Default = false, Callback = function(enabled) getgenv().autosell = enabled end })
-    NinjaTab:Toggle({ Title = "自动购买排名", Default = false, Callback = function(enabled) getgenv().autobuyranks = enabled end })
-    NinjaTab:Toggle({ Title = "自动购买腰带", Default = false, Callback = function(enabled) getgenv().autobuybelts = enabled end })
-    NinjaTab:Toggle({ Title = "自动购买技能", Default = false, Callback = function(enabled) getgenv().autobuyskills = enabled end })
-    NinjaTab:Toggle({ Title = "自动购买剑", Default = false, Callback = function(enabled) getgenv().autobuy = enabled end })
-    NinjaTab:Button({ Title = "解锁所有岛", Callback = function() for _, islandPart in ipairs(Workspace.islandUnlockParts:GetChildren()) do if islandPart and islandPart:FindFirstChild("islandSignPart") then local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"); if root then root.CFrame = islandPart.islandSignPart.CFrame; task.wait(0.5) end end end end })
+
+    NinjaTab:Toggle({
+        Title = "自动挥舞", Default = false,
+        Callback = function(enabled)
+            getgenv().autoswing = enabled
+            if enabled then
+                task.spawn(function()
+                    while getgenv().autoswing do
+                        pcall(function()
+                            local player = Players.LocalPlayer
+                            if not player then return end
+                            for _, tool in pairs(player.Backpack:GetChildren()) do
+                                if tool:FindFirstChild("ninjitsuGain") then
+                                    local char = player.Character
+                                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                                    if hum and hum.Parent then hum:EquipTool(tool) end
+                                    break
+                                end
+                            end
+                            local ninjaEvent = player:FindFirstChild("ninjaEvent")
+                            if ninjaEvent then ninjaEvent:FireServer("swingKatana") end
+                        end)
+                        task.wait(0.5)
+                    end
+                end)
+            else
+                getgenv().autoswing = false
+            end
+        end
+    })
+
+    NinjaTab:Toggle({
+        Title = "自动售卖", Default = false,
+        Callback = function(enabled)
+            getgenv().autosell = enabled
+        end
+    })
+
+    NinjaTab:Toggle({
+        Title = "自动购买排名", Default = false,
+        Callback = function(enabled)
+            getgenv().autobuyranks = enabled
+        end
+    })
+
+    NinjaTab:Toggle({
+        Title = "自动购买腰带", Default = false,
+        Callback = function(enabled)
+            getgenv().autobuybelts = enabled
+        end
+    })
+
+    NinjaTab:Toggle({
+        Title = "自动购买技能", Default = false,
+        Callback = function(enabled)
+            getgenv().autobuyskills = enabled
+        end
+    })
+
+    NinjaTab:Toggle({
+        Title = "自动购买剑", Default = false,
+        Callback = function(enabled)
+            getgenv().autobuy = enabled
+        end
+    })
+
+    NinjaTab:Button({
+        Title = "解锁所有岛",
+        Callback = function()
+            for _, islandPart in ipairs(Workspace.islandUnlockParts:GetChildren()) do
+                if islandPart and islandPart:FindFirstChild("islandSignPart") then
+                    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        root.CFrame = islandPart.islandSignPart.CFrame
+                        task.wait(0.5)
+                    end
+                end
+            end
+        end
+    })
+
     NinjaTab:Paragraph({ Title = "传送功能", Desc = "" })
     local teleportList = {
         {"出生点", CFrame.new(25.67, 3.42, 29.92)},
+        {"附魔岛", CFrame.new(51.17, 766.18, -138.45)},
+        {"神秘岛", CFrame.new(171.97, 4047.38, 42.07)},
+        {"太空岛", CFrame.new(148.84, 5657.19, 73.50)},
+        {"冻土岛", CFrame.new(139.28, 9285.18, 77.36)},
+        {"永恒岛", CFrame.new(149.35, 13680.04, 73.39)},
+        {"沙暴岛", CFrame.new(133.37, 17686.33, 72.00)},
+        {"雷暴岛", CFrame.new(143.19, 24070.02, 78.05)},
+        {"远古炼狱岛", CFrame.new(141.27, 28256.29, 69.38)},
+        {"午夜暗影岛", CFrame.new(132.74, 33206.98, 57.50)},
+        {"神秘灵魂岛", CFrame.new(137.76, 39317.57, 61.07)},
+        {"冬季奇迹岛", CFrame.new(137.27, 46010.55, 55.94)},
+        {"黄金大师岛", CFrame.new(128.32, 52607.77, 56.69)},
+        {"龙传奇岛", CFrame.new(146.35, 59594.68, 77.53)},
+        {"赛博传奇岛", CFrame.new(137.33, 66669.16, 72.22)},
+        {"天岚超能岛", CFrame.new(135.48, 70271.16, 57.02)},
+        {"混沌传奇岛", CFrame.new(148.59, 74442.85, 69.32)},
+        {"灵魂融合岛", CFrame.new(136.97, 79746.98, 58.54)},
+        {"黑暗元素岛", CFrame.new(141.70, 83198.98, 72.73)},
         {"内心和平岛", CFrame.new(135.32, 87051.06, 66.78)},
+        {"炽烈漩涡岛", CFrame.new(135.08, 91246.07, 69.57)},
+        {"35倍金币区域", CFrame.new(86.29, 91245.77, 120.54)},
+        {"死亡宠物", CFrame.new(4593.21, 130.87, 1430.22)},
     }
-    for _, data in ipairs(teleportList) do NinjaTab:Button({ Title = "传送到"..data[1], Callback = function() local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart"); if root then root.CFrame = data[2] end end }) end
+    for _, data in ipairs(teleportList) do
+        NinjaTab:Button({
+            Title = "传送到" .. data[1],
+            Callback = function()
+                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if root then root.CFrame = data[2] end
+            end
+        })
+    end
 
-    -- 流光彩虹边框
+    -- ==================== 流光彩虹边框 ====================
     task.wait(0.3)
     local Main = Window.UIElements and Window.UIElements.Main or nil
     if Main then
-        for _, v in ipairs(Main:GetDescendants()) do if v:IsA("UIStroke") and v.Name == "RainbowBorder" then v:Destroy() end end
-        local Stroke = Instance.new("UIStroke"); Stroke.Name = "RainbowBorder"; Stroke.Thickness = 3.5; Stroke.Color = Color3.new(1, 1, 1); Stroke.LineJoinMode = Enum.LineJoinMode.Round; Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; Stroke.Parent = Main
-        local Gradient = Instance.new("UIGradient"); Gradient.Name = "RainbowGradient"; Gradient.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)), ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)), ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) }); Gradient.Parent = Stroke
-        local currentAngle = 0; local rotSpeed = 150
-        RunService.RenderStepped:Connect(function(dt) if Stroke and Stroke.Parent then currentAngle = (currentAngle + dt * rotSpeed) % 360; Gradient.Rotation = currentAngle end end)
-        Stroke.Enabled = true; Stroke.Transparency = 0
+        for _, v in ipairs(Main:GetDescendants()) do
+            if v:IsA("UIStroke") and v.Name == "RainbowBorder" then v:Destroy() end
+        end
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Name = "RainbowBorder"
+        Stroke.Thickness = 3.5
+        Stroke.Color = Color3.new(1, 1, 1)
+        Stroke.LineJoinMode = Enum.LineJoinMode.Round
+        Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        Stroke.Parent = Main
+        local Gradient = Instance.new("UIGradient")
+        Gradient.Name = "RainbowGradient"
+        Gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0,    Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 255, 0)),
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+            ColorSequenceKeypoint.new(0.5,  Color3.fromRGB(0, 255, 255)),
+            ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)),
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+            ColorSequenceKeypoint.new(1,    Color3.fromRGB(255, 0, 0))
+        })
+        Gradient.Parent = Stroke
+        local currentAngle = 0
+        local rotSpeed = 150
+        RunService.RenderStepped:Connect(function(dt)
+            if Stroke and Stroke.Parent then
+                currentAngle = (currentAngle + dt * rotSpeed) % 360
+                Gradient.Rotation = currentAngle
+            end
+        end)
+        Stroke.Enabled = true
+        Stroke.Transparency = 0
         local Corner = Main:FindFirstChildOfClass("UICorner")
-        if not Corner then Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 12); Corner.Parent = Main end
+        if not Corner then
+            Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 12)
+            Corner.Parent = Main
+        end
     end
 
     local function rainbowText(str)
-        local colors = { Color3.fromRGB(255,0,0), Color3.fromRGB(255,127,0), Color3.fromRGB(255,255,0), Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255) }
-        local result = ""; local index = 0
+        local colors = {
+            Color3.fromRGB(255,0,0), Color3.fromRGB(255,127,0), Color3.fromRGB(255,255,0),
+            Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255)
+        }
+        local result = ""
+        local index = 0
         for _, codepoint in utf8.codes(str) do
-            local char = utf8.char(codepoint); local col = colors[(index % #colors) + 1]
-            result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', math.floor(col.R * 255), math.floor(col.G * 255), math.floor(col.B * 255), char); index = index + 1
+            local char = utf8.char(codepoint)
+            local col = colors[(index % #colors) + 1]
+            result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
+                math.floor(col.R * 255), math.floor(col.G * 255), math.floor(col.B * 255), char)
+            index = index + 1
         end
         return result
     end
     Notify(rainbowText("脚本加载成功 v1.5"), rainbowText("所有功能已就绪"), 3)
-end
-
--- ==================== 宠物商店窗口生成函数 ====================
-function CreatePetShopWindow()
-    local win = WindUI:CreateWindow({
-        Title = "绝版宠物商店", Icon = "shopping-cart", Author = "阿呆",
-        Size = UDim2.fromOffset(320, 260), Theme = CurrentTheme or "Dark",
-        Resizable = true, CornerRadius = UDim.new(0, 14),
-    })
-    local tab = win:Tab({ Title = "宠物", Icon = "paw" })
-    tab:Paragraph({ Title = "直接购买", Desc = "点击对应按钮即可购买，请确保背包资源充足。" })
-    local function buy(name)
-        pcall(function()
-            local Remote = game:GetService("ReplicatedStorage").cPetShopRemote
-            local Folder = game:GetService("ReplicatedStorage").cPetShopFolder
-            if Remote and Folder then
-                local pet = Folder:FindFirstChild(name)
-                if pet then Remote:InvokeServer(pet); Notify("购买成功", name, 2) else Notify("未找到宠物", name, 3) end
-            else Notify("商店系统不可用", 3) end
-        end)
-    end
-    tab:Button({ Title = "🦅 双元素小鸟", Callback = function() buy("Twin Element Birdies") end })
-    tab:Button({ Title = "⚔️ 禅心军团",   Callback = function() buy("Inner Peace Legion") end })
-    tab:Button({ Title = "🐰 混沌兔子",   Callback = function() buy("Swift Eclipse Bunny") end })
 end

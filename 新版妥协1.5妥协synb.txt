@@ -33,6 +33,15 @@ local function Notify(title, content, duration, icon)
     pcall(function() WindUI:Notify({ Title = tostring(title or ""), Content = tostring(content or ""), Duration = duration or 3, Icon = icon or "info" }) end)
 end
 
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        Notify("脚本加载失败", "请检查链接或网络", 3)
+    end
+end
+
 local username = LocalPlayer.Name
 local coloredUsername = ""
 for i = 1, #username do

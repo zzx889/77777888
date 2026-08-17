@@ -1,4 +1,4 @@
--- 妥协 Hub V1.5 修改版（保留原背景，添加缺失功能，删除力量传奇）
+-- 妥协 Hub V1.5 修改版（更换 Sky 主题，删除宠物复制）
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -91,9 +91,23 @@ WindUI:AddTheme({
     ToggleBar = Color3.fromRGB(255,255,255), Slider = Color3.fromRGB(100,120,180), SliderThumb = Color3.fromRGB(255,255,255),
     Checkbox = Color3.fromRGB(100,120,180), CheckboxIcon = Color3.fromRGB(255,255,255),
 })
+-- 新增 Sky 主题
+WindUI:AddTheme({
+    Name = "Sky", Background = Color3.fromRGB(20,22,28), ElementBackground = Color3.fromRGB(28,30,36),
+    Button = Color3.fromRGB(70,130,200), Hover = Color3.fromRGB(255,255,255), Text = Color3.fromRGB(230,235,245),
+    Placeholder = Color3.fromRGB(120,130,150), Icon = Color3.fromRGB(150,200,255), Outline = Color3.fromRGB(60,70,90),
+    Accent = WindUI:Gradient({
+        ["0"] = { Color = Color3.fromRGB(0,180,255), Transparency = 0.6 },
+        ["100"] = { Color = Color3.fromRGB(0,90,200), Transparency = 0.9 },
+    }),
+    WindowBackground = Color3.fromRGB(18,20,26), TabTitle = Color3.fromRGB(230,235,245), TabIcon = Color3.fromRGB(150,200,255),
+    ElementTitle = Color3.fromRGB(230,235,245), ElementDesc = Color3.fromRGB(150,160,180), Toggle = Color3.fromRGB(70,120,180),
+    ToggleBar = Color3.fromRGB(255,255,255), Slider = Color3.fromRGB(70,120,180), SliderThumb = Color3.fromRGB(255,255,255),
+    Checkbox = Color3.fromRGB(70,120,180), CheckboxIcon = Color3.fromRGB(255,255,255),
+})
 
 local ThemeFile = "NightTheme.txt"
-local CurrentTheme = "Dark"
+local CurrentTheme = "Sky"  -- 默认使用 Sky 主题
 pcall(function()
     if isfile and isfile(ThemeFile) then
         local saved = readfile(ThemeFile)
@@ -105,7 +119,7 @@ end)
 local startGui = Instance.new("ScreenGui", playerGui)
 startGui.Name = "StartupSystem"
 
--- ================= 加载条 =================
+-- 加载条
 local loadingFrame = Instance.new("Frame", startGui)
 loadingFrame.Size = UDim2.new(0, 300, 0, 90)
 loadingFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -173,7 +187,7 @@ end)
 
 repeat task.wait() until loadingDone
 
--- ================= 公告弹窗 =================
+-- 公告弹窗
 local adFrame = Instance.new("Frame", startGui)
 adFrame.Size = UDim2.new(0, 280, 0, 220)
 adFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -388,7 +402,7 @@ function createUI()
         MinSize = Vector2.new(560, 350),
         MaxSize = Vector2.new(850, 560),
         Transparent = true,
-        Theme = CurrentTheme,
+        Theme = CurrentTheme,  -- 现在为 Sky
         Resizable = true,
         Background = "https://i.ibb.co/KzpGVsQR/153941.png",   -- 保留原背景图
         BackgroundImageTransparency = 0.5,
@@ -456,6 +470,14 @@ function createUI()
         Draggable = true,
     })
 
+    Window:Tag({
+        Title = "v1.5.0",
+        Color = Color3.fromHex("#30ff6a")
+    })
+    Window:Tag({
+        Title = "大牛版",
+    })
+
     -- ==================== 全局功能模块 ====================
     local function Rainbow() return Color3.fromHSV((tick()*0.25)%1,1,1) end
     FeatureGui = Instance.new("ScreenGui", CoreGui); FeatureGui.Name = "FeatureDisplay"
@@ -510,7 +532,7 @@ function createUI()
     local circle = Instance.new("Frame", screenGui); circle.Size = UDim2.new(0,240,0,240); circle.AnchorPoint = Vector2.new(0.5,0.5); circle.Position = UDim2.new(0.5,0,0.5,0); circle.BackgroundTransparency = 1; circle.Visible = false
     Instance.new("UIStroke", circle).Color = Color3.fromRGB(128,0,128); Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
 
-    -- ==================== 瞬移模块（增强版） ====================
+    -- ==================== 瞬移模块 ====================
     local function EnableTPUI()
         if TP_Loaded then if TP_Module.Gui then TP_Module.Gui.Enabled = true end; return end
         TP_Loaded = true
@@ -585,7 +607,7 @@ function createUI()
     local function StopFlingLoop() FlingLoop = false end
     LocalPlayer.CharacterAdded:Connect(function(char) if SpinEnabled then task.wait(0.5); StartSpin() end end)
 
-    -- ==================== 自瞄系统（增强版） ====================
+    -- ==================== 自瞄系统 ====================
     local function GetAimPart(char) if not char then return nil end; return char:FindFirstChild(AimPart) or char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart") end
     local VisibilityCache = {}
     local function isVisible(p, part)
@@ -915,7 +937,6 @@ function createUI()
     PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
     PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
     PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
-
     -- 通用
     local OtherTab = Window:Tab({ Title = "通用", Icon = "info" })
     OtherTab:Button({ Title = "祖国人汉化", Callback = function() safeLoad("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化") end })
@@ -1034,15 +1055,12 @@ function createUI()
     ScriptCenterTab:Button({ Title = "俄亥俄州", Desc = "加载俄亥俄州脚本", Callback = function() safeLoad("https://raw.githubusercontent.com/FakeW0rld/lagct/refs/heads/main/ohio.lua") end })
     ScriptCenterTab:Button({ Title = "内脏与黑火药清风脚本", Desc = "加载清风脚本", Callback = function() getgenv().SCRIPT_KEY = ""; safeLoad("https://api.jnkie.com/api/v1/luascripts/public/8d36cbb0e44bb4a4a844499c7f7140bc7734f8072eebf59a4d4784773bf17dfa/download") end })
     ScriptCenterTab:Button({ Title = "夜脚本", Desc = "加载夜脚本", Callback = function() safeLoad("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/yejiaoben") end })
-    -- ==================== 翻译功能 ====================
+
+    -- 翻译功能
     local TranslateTab = Window:Tab({ Title = "翻译", Icon = "languages" })
     TranslateTab:Paragraph({
         Title = gradient("🌐 自动翻译", Color3.fromHex("#00DBDE"), Color3.fromHex("#FC00FF")),
         Desc = "自动将游戏界面中的英文/日文/韩文等翻译为简体中文\n作者：TX (改编自 TX自动翻译器)\n注意：请先开启翻译再加载其他需要翻译的脚本\n小部分特殊UI可能无法翻译"
-    })
-    TranslateTab:Paragraph({
-        Title = gradient(" 作者介绍", Color3.fromHex("#FFB347"), Color3.fromHex("#FF6B6B")),
-        Desc = "翻译引擎由 TX 开发，基于 Google 和 MyMemory 双 API\n自动识别语言并智能跳过纯数字、玩家名、表情动作等\n适配大部分 Roblox 游戏界面.翻译需要等一会儿"
     })
     TranslateTab:Button({
         Title = "启动 TX 全自动翻译",
@@ -1052,7 +1070,7 @@ function createUI()
         end
     })
 
-    -- ==================== 动作功能 ====================
+    -- 动作功能
     local AnimTab = Window:Tab({ Title = "动作功能", Icon = "eye" })
     local function GetAnimator() local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait(); local hum = char:WaitForChild("Humanoid"); local animator = hum:FindFirstChildOfClass("Animator"); if not animator then animator = Instance.new("Animator"); animator.Parent = hum end; return animator end
     local function PlayAnim(animId) local animator = GetAnimator(); if currentTrack then currentTrack:Stop(); currentTrack:Destroy() end; local anim = Instance.new("Animation"); anim.AnimationId = animId; local track = animator:LoadAnimation(anim); anim:Destroy(); track.Priority = Enum.AnimationPriority.Action; track.Looped = true; track:Play(); currentTrack = track end
@@ -1066,12 +1084,12 @@ function createUI()
     AnimTab:Button({ Title = "假死", Callback = function() PlayAnim("rbxassetid://88130117312312") end })
     AnimTab:Button({ Title = "投降", Callback = function() PlayAnim("rbxassetid://100537772865440") end })
 
-    -- ==================== 终止 ====================
+    -- 终止
     local StopTab = Window:Tab({ Title = "终止", Icon = "x" })
     StopTab:Button({ Title = "强制退出", Callback = function() pcall(function() game:Shutdown() end) end })
     StopTab:Button({ Title = "自杀", Callback = function() local c = LocalPlayer.Character; if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.Health = 0 end end })
 
-    -- ==================== 配置（含主题切换） ====================
+    -- 配置
     local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
     ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
     ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
@@ -1082,10 +1100,10 @@ function createUI()
 
     local ThemeList = {}
     pcall(function() ThemeList = WindUI:GetThemes() end)
-    local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+    local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold", "Sky"}
     for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
-    local NewList = {"Dark"}
-    for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
+    local NewList = {"Sky"}
+    for _, v in ipairs(ThemeList) do if v ~= "Sky" then table.insert(NewList, v) end end
     ThemeList = NewList
 
     ConfigTab:Dropdown({
@@ -1105,7 +1123,7 @@ function createUI()
         end
     })
 
-    -- ==================== 音乐播放器 ====================
+    -- 音乐播放器
     local MusicTab = Window:Tab({ Title = "音乐播放器", Icon = "music" })
     local function CreateSound() if musicSound and musicSound.Parent then pcall(function() musicSound:Destroy() end) end; musicSound = Instance.new("Sound", Workspace); musicSound.Volume = musicVolume end
     local function StopMusic() if musicSound then pcall(function() musicSound:Stop() end) end; if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end end
@@ -1115,7 +1133,7 @@ function createUI()
     MusicTab:Toggle({ Title = "🔁 循环播放", Default = false, Callback = function(state) loopEnabled = state; if musicSound and musicSound.IsPlaying then if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end; if state then musicLoopConnection = musicSound.Ended:Connect(function() if loopEnabled and musicSound then musicSound:Play() end end) end end end })
     MusicTab:Button({ Title = "⏹ 停止播放", Callback = function() StopMusic(); if musicSound then musicSound:Destroy(); musicSound = nil end; Notify("音乐已停止", "", 1, "info") end })
 
-    -- ==================== 娱乐 ====================
+    -- 娱乐
     local FunTab = Window:Tab({ Title = "娱乐", Icon = "smile" })
     FunTab:Toggle({ Title = "虚假消息开关", Default = false, Callback = function(v) FakeChatEnabled = v end })
     FunTab:Input({ Title = "消息内容", Placeholder = "输入要发送的假消息", Callback = function(t) FakeChatMessage = t end })
@@ -1151,69 +1169,73 @@ function createUI()
         end
     end)
 
-    -- ==================== 宠物复制分区 ====================
-    local PetCopyTab = Window:Tab({ Title = "宠物复制", Icon = "copy" })
+    -- ==================== Info 分区 ====================
+    local InfoTab = Window:Tab({ Title = "Info", Icon = "info" })
+    InfoTab:Section({ Title = "Info信息" })
+    InfoTab:Paragraph({
+        Title = "联系:",
+        Desc = "1345639578",
+        Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
+        ImageSize = 42,
+        ThumbnailSize = 120
+    })
+    InfoTab:Paragraph({
+        Title = "更新信息",
+        Desc = "由妥协更新",
+        Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
+        ImageSize = 42,
+        ThumbnailSize = 120
+    })
 
-    local petNameInput = ""
-    local copyCount = 1
+    -- ==================== 控件分区 ====================
+    local ControlTab = Window:Tab({ Title = "控件", Icon = "terminal" })
+    ControlTab:Section({ Title = "基础控件" })
+    ControlTab:Button({
+        Title = "Button",
+        Callback = function() end
+    })
+    ControlTab:Toggle({
+        Title = "Toggle with icon",
+        Icon = "check",
+        Value = false,
+        Callback = function(state) print("Toggle with icon activated: " .. tostring(state)) end
+    })
+    ControlTab:Input({
+        Title = "Username",
+        Value = "Guest",
+        Placeholder = "Enter your username",
+        Callback = function(input) print("Username: " .. input) end
+    })
 
-    PetCopyTab:Input({
-        Title = "宠物名字",
-        Desc = "请输入你拥有的稀有宠物名称（例如：Red Dragon）",
-        Value = "",
-        Placeholder = "例如: Red Dragon",
-        Color = Color3.fromRGB(0, 170, 255),
-        Callback = function(input)
-            petNameInput = input
+    -- ==================== Slider 分区 ====================
+    local SliderTab = Window:Tab({ Title = "Slider", Icon = "file-cog" })
+    SliderTab:Section({ Title = "Slider" })
+    SliderTab:Slider({
+        Title = "Slider",
+        Value = { Min = 0, Max = 200, Default = 16 },
+        Callback = function(value) end
+    })
+
+    -- ==================== 列表分区 ====================
+    local DropdownTab = Window:Tab({ Title = "列表", Icon = "user" })
+    DropdownTab:Section({ Title = "列表" })
+    DropdownTab:Dropdown({
+        Title = "Choose a Category (Multi)",
+        Values = { "Category A", "Category B", "Category C" },
+        Value = { "Category A" },
+        Multi = true,
+        AllowNone = true,
+        Callback = function(option) 
+            print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
         end
     })
 
-    PetCopyTab:Input({
-        Title = "复制次数",
-        Desc = "请输入复制数量",
-        Value = "1",
-        Placeholder = "例如: 5",
-        Color = Color3.fromRGB(0, 170, 255),
-        Callback = function(input)
-            copyCount = tonumber(input) or 1
-        end
-    })
-
-    PetCopyTab:Button({
-        Title = "复制宠物",
-        Desc = "点击复制指定宠物到稀有文件夹",
-        Color = Color3.fromRGB(0, 170, 255),
-        Callback = function()
-            if petNameInput == "" then
-                Notify("错误", "请输入宠物名称", 2)
-                return
-            end
-            pcall(function()
-                local player = Players.LocalPlayer
-                local petsFolder = player:FindFirstChild("petsFolder")
-                if not petsFolder then
-                    Notify("错误", "未找到 petsFolder", 2)
-                    return
-                end
-                local rarePets = petsFolder:FindFirstChild("Rare")
-                if not rarePets then
-                    Notify("错误", "未找到 Rare 文件夹", 2)
-                    return
-                end
-                local targetPet = rarePets:FindFirstChild(petNameInput)
-                if not targetPet then
-                    Notify("错误", "未找到宠物: " .. petNameInput, 2)
-                    return
-                end
-                for i = 1, copyCount do
-                    local petClone = targetPet:Clone()
-                    petClone.Parent = rarePets
-                    petClone.Name = petNameInput .. " (复制" .. i .. ")"
-                    task.wait(0.1)
-                end
-                Notify("成功", "已复制 " .. copyCount .. " 次", 2)
-            end)
-        end
+    -- ==================== Colorpicker 分区 ====================
+    local ColorpickerTab = Window:Tab({ Title = "Colorpicker", Icon = "eye" })
+    ColorpickerTab:Section({ Title = "Colorpicker" })
+    ColorpickerTab:Colorpicker({
+        Title = "高亮颜色",
+        Callback = function(color) end
     })
 
     -- ==================== 忍者传奇独立分区 ====================

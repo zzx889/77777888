@@ -1,4 +1,4 @@
--- ====================== UI文本自动汉化（前置模块，不删原内容）======================
+   -- ====================== UI文本自动汉化（前置模块，不删原内容）======================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")

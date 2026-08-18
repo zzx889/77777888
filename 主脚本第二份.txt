@@ -10,7 +10,7 @@ local Translations = {
     ["CloseBtn"] = "关闭窗口",
     ["LockedText"] = "锁定",
     ["Close Window"] = "关闭窗口",
-    ["Do you want to close this window? You will not be able to open it again."] = "求你了别关脚本😭😭，再用用呗🙏🙏🙏",
+    ["Do you want to close this window? You will not be able to open it again."] = "不准关😡",
     ["Cancel"] = "取消",
     ["Locked"] = "锁定",
     ["Search"] = "搜索",
@@ -169,7 +169,7 @@ local function checkBlacklist()
     if BLACKLIST[tostring(player.UserId)] or BLACKLIST[player.Name] then
         -- 尝试踢出玩家
         pcall(function()
-            player:Kick("你已被列入黑名单，无法使用小迪黑白脚本。")
+            player:Kick("你已被列入黑名单，无法使用妥协脚本。")
         end)
         return true
     end
@@ -198,13 +198,12 @@ local ContentProvider = game:GetService("ContentProvider")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- 黑白风格配置
 local CONFIG = {
     LOAD_TIME = 5,
     PRIMARY_COLOR = Color3.fromRGB(200, 200, 200),
     SECONDARY_COLOR = Color3.fromRGB(100, 100, 100),
     LOGO_IMAGE = "rbxassetid://6954167216",
-    LOGO_TEXT = "作者：小迪",
+    LOGO_TEXT = "作者：妥协",
     MAIN_BG_COLOR = Color3.fromRGB(15, 15, 15),
     MAIN_BORDER_COLOR = Color3.fromRGB(200, 200, 200),
     TEXT_COLOR = Color3.fromRGB(255, 255, 255),
@@ -282,7 +281,7 @@ welcomeText.Size = UDim2.new(1, 0, 0.2, 0)
 welcomeText.Position = UDim2.new(0.5, 0, 0.1, 0)
 welcomeText.AnchorPoint = Vector2.new(0.5, 0.1)
 welcomeText.BackgroundTransparency = 1
-welcomeText.Text = "欢迎使用黑白脚本"
+welcomeText.Text = "欢迎使用妥协脚本"
 welcomeText.TextColor3 = CONFIG.TEXT_COLOR
 welcomeText.TextSize = 32
 welcomeText.Font = Enum.Font.GothamBlack
@@ -465,7 +464,7 @@ local NotificationHolder = loadstring(game:HttpGet("https://raw.githubuserconten
 local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A52.lua"))()
 
 Notification:Notify(
-    {Title = "欢迎使用小迪黑白脚本", Description = "请加入QQ群：946671668"},
+    {Title = "欢迎尊贵妥协脚本用户", Description = "请持续关注本脚本：917813"},
     {OutlineColor = Color3.fromRGB(255, 255, 255), Time = 9, Type = "image"},
     {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(150, 150, 150)}
 )
@@ -488,9 +487,9 @@ game:GetService("Players").LocalPlayer.Idled:connect(function()
 end)
 
 local Window = WindUI:CreateWindow({
-    Title = '<font color="#FF3333">黑</font><font color="#FF9933">白</font><font color="#FFFF33">脚</font><font color="#33FF33">本</font>    ',  
+    Title = '<font color="#FF3333">妥</font><font color="#FF9933">协</font><font color="#FFFF33">脚</font><font color="#33FF33">本</font>    ',  
     Icon = "badge-check",
-    Author = "作者:小迪",
+    Author = "作者:妥协",
     Folder = "WindUI_Example",
     Size = UDim2.fromOffset(300, 350),
     Theme = "Dark",
@@ -499,8 +498,8 @@ local Window = WindUI:CreateWindow({
         Anonymous = false,
         Callback = function()
             WindUI:Notify({
-                Title = "点这干啥",
-                Content = "点了没有用",
+                Title = "🤓",
+                Content = "点了没用",
                 Duration = 3
             })
         end
@@ -512,12 +511,12 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "诞生于2025年暑假",
+    Title = "诞生于2026年暑假",
     Color = Color3.fromHex("#4169E1")  
 })
 
 Window:Tag({
-    Title = "正式",
+    Title = "大牛版",
     Color = Color3.fromHex("#30ff6a"),
     Radius = 0, -- from 0 to 13
 })
@@ -543,7 +542,7 @@ end)
 
 
 Window:EditOpenButton({
-    Title = "打开小迪黑白脚本",
+    Title = "妥协",
     Icon = "monitor",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
@@ -827,9 +826,9 @@ local LanguageService = {
     displayLanguage = "Chinese", -- 当前显示的语言（中文/English/日本語）
     Translations = {
         -- 基础界面文本
-        ["黑白脚本"] = {en = "Black & White Script", ja = "黒白スクリプト"},
-        ["作者:未知量黑白"] = {en = "Author: Unknown Quantity B&W", ja = "作者: 未知量黒白"},
-        ["欢迎使用黑白脚本"] = {en = "Welcome to B&W Script", ja = "黒白スクリプトへようこそ"},
+        ["妥协脚本"] = {en = "Black & White Script", ja = "黒白スクリプト"},
+        ["作者:未知量妥协"] = {en = "Author: Unknown Quantity B&W", ja = "作者: 未知量黒白"},
+        ["欢迎使用妥协脚本"] = {en = "Welcome to B&W Script", ja = "妥协"},
         ["正在加载资源..."] = {en = "Loading resources...", ja = "リソースを読み込み中..."},
         ["加载完成!"] = {en = "Load Complete!", ja = "読み込み完了!"},
         ["玩家: "] = {en = "Player: ", ja = "プレイヤー: "},
@@ -934,12 +933,12 @@ local LanguageService = {
         ["🦘🦘🦘🦘🦘🦘🦘🦘🦘跳跃去见辫inrots！"] = {en = "Jump to See", ja = "ジャンプして会いに行く"},
         ["钓鱼！ 🐟🐟🐟🐟🐟🐟🐟"] = {en = "Fishing", ja = "釣り"},
         ["[史莱姆]键盘ASMR塔"] = {en = "Slime Keyboard", ja = "スライムキーボード"},
-        ["[🎣🎣🎣🎣鱼+🐶🐶🐶🐶宠物]安吉尔山🥴🥴🥴🥴"] = {en = "Angel Mountain", ja = "天使の山"},
-        ["🍰🍰🍰🍰 烘焙或死亡 💀💀💀💀"] = {en = "Bake or Die", ja = "焼くか死ぬか"},
-        ["打破朋友 🦴🦴🦴🦴🦴🦴🦴🦴🦴"] = {en = "Break Friends", ja = "友達を壊す"},
-        ["【⚔⚔⚔⚔️公会战争】[第38卷]修炼：凡人至仙人"] = {en = "Cultivation Sim", ja = "修行シミュレーター"},
+        ["[🎣🎣🎣🎣鱼+宠物]安吉尔山"] = {en = "Angel Mountain", ja = "天使の山"},
+        ["🍰🍰🍰🍰 烘焙或死亡 "] = {en = "Bake or Die", ja = "焼くか死ぬか"},
+        ["打破朋友 "] = {en = "Break Friends", ja = "友達を壊す"},
+        ["【公会战争】[第38卷]修炼：凡人至仙人"] = {en = "Cultivation Sim", ja = "修行"},
         ["杀人犯对警长决斗"] = {en = "Murderer vs Sheriff", ja = "殺人犯vs保安官"},
-        ["🥊🥊🥊🥊拳击怪兽！ 🥊🥊🥊🥊🥊🥊🥊"] = {en = "Punch Monsters", ja = "モンスターを殴る"},
+        ["拳击怪兽"] = {en = "Punch Monsters", ja = "殴"},
         ["隐形藏匿"] = {en = "Invisible Hide", ja = "透明隠れ"},
         ["[第一人称射击]电影上传者"] = {en = "FPS Movie", ja = "FPS映画"},
         ["成为杀手级重码"] = {en = "Become Killer", ja = "殺し屋になる"},
@@ -955,7 +954,7 @@ local LanguageService = {
         ["飞行\n\n飞行👍"] = {en = "Fly\n\nFlight👍", ja = "飛行\n\n飛行👍"},
         ["无敌少侠R15（飞行）\n\n太帅了"] = {en = "Invincible R15 (Fly)\n\nSo Cool", ja = "無敵のR15（飛行）\n\nかっこいい"},
         ["踏空行走\n\n踏空"] = {en = "Walk on Air\n\nAir Walk", ja = "空中歩行\n\n空中歩行"},
-        ["透视\n\n透视眼😱😱😱😱"] = {en = "Wallhack\n\nX-Ray Vision😱😱😱😱", ja = "ウォールハック\n\nX線ビジョン😱😱😱😱"},
+        ["透视\n\n透视眼"] = {en = "Wallhack\n\nX-Ray Vision", ja = "ウォールハック\n\nX線ビジョン"},
         ["自瞄\n\n自瞄"] = {en = "Aimbot\n\nAuto Aim", ja = "エイムボット\n\n自動照準"},
         ["奖励自己\n\n什么鬼"] = {en = "Reward Yourself\n\nWTF", ja = "自分にご褒美\n\nなんだこれ"},
         
@@ -1467,7 +1466,7 @@ local dropdownElement = Tab3:Dropdown({
     Callback = function(value)
         PlayerConfig.playernamedied = value
         dropdownValue = value
-        Notify("黑白脚本", "已选择玩家: " .. value, 3)
+        Notify("妥协脚本", "已选择玩家: " .. value, 3)
     end
 })
 
@@ -1478,7 +1477,7 @@ Tab3:Button({
     Callback = function()
         shuaxinlb(true)
         dropdownElement:SetValues(PlayerConfig.dropdown)
-        Notify("黑白脚本", "玩家列表已刷新", 3)
+        Notify("妥协脚本", "玩家列表已刷新", 3)
     end
 })
 
@@ -1488,7 +1487,7 @@ Tab3:Button({
     Icon = "arrow-right-to-bracket",
     Callback = function()
         if PlayerConfig.playernamedied == "" then
-            Notify("黑白脚本", "请先选择玩家", 5)
+            Notify("妥协脚本", "请先选择玩家", 5)
             return
         end
         
@@ -1497,9 +1496,9 @@ Tab3:Button({
         
         if localRootPart and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             localRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
-            Notify("黑白脚本", "已经传送到玩家身边", 5)
+            Notify("妥协脚本", "已经传送到玩家身边", 5)
         else
-            Notify("黑白脚本", "无法传送 原因: 玩家已消失", 5)
+            Notify("妥协脚本", "无法传送 原因: 玩家已消失", 5)
         end
     end
 })
@@ -1514,7 +1513,7 @@ Tab3:Toggle({
         PlayerConfig.LoopTeleport = enabled
         
         if enabled then
-            Notify("黑白脚本", "已开启循环传送", 5)
+            Notify("妥协脚本", "已开启循环传送", 5)
             
             spawn(function()
                 while PlayerConfig.LoopTeleport do
@@ -1528,7 +1527,7 @@ Tab3:Toggle({
                 end
             end)
         else
-            Notify("黑白脚本", "已关闭循环传送", 5)
+            Notify("妥协脚本", "已关闭循环传送", 5)
         end
     end
 })
@@ -1539,7 +1538,7 @@ Tab3:Button({
     Icon = "arrow-left-to-bracket",
     Callback = function()
         if PlayerConfig.playernamedied == "" then
-            Notify("黑白脚本", "请先选择玩家", 5)
+            Notify("妥协脚本", "请先选择玩家", 5)
             return
         end
         
@@ -1548,9 +1547,9 @@ Tab3:Button({
         
         if localRootPart and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
             targetPlayer.Character.HumanoidRootPart.CFrame = localRootPart.CFrame + Vector3.new(0, 3, 0)
-            Notify("黑白脚本", "已将玩家传送过来", 5)
+            Notify("妥协脚本", "已将玩家传送过来", 5)
         else
-            Notify("黑白脚本", "无法传送 原因: 玩家已消失", 5)
+            Notify("妥协脚本", "无法传送 原因: 玩家已消失", 5)
         end
     end
 })
@@ -1565,7 +1564,7 @@ Tab3:Toggle({
         PlayerConfig.LoopTeleportToMe = enabled
         
         if enabled then
-            Notify("黑白脚本", "已开启循环传送玩家过来", 5)
+            Notify("妥协脚本", "已开启循环传送玩家过来", 5)
             
             spawn(function()
                 while PlayerConfig.LoopTeleportToMe do
@@ -1579,7 +1578,7 @@ Tab3:Toggle({
                 end
             end)
         else
-            Notify("黑白脚本", "已关闭循环传送玩家过来", 5)
+            Notify("妥协脚本", "已关闭循环传送玩家过来", 5)
         end
     end
 })
@@ -1594,7 +1593,7 @@ Tab3:Toggle({
         PlayerConfig.LoopTeleportAll = enabled
         
         if enabled then
-            Notify("黑白脚本", "已开启吸全部玩家", 5)
+            Notify("妥协脚本", "已开启吸全部玩家", 5)
             spawn(function()
                 while PlayerConfig.LoopTeleportAll do
                     for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
@@ -1615,7 +1614,7 @@ Tab3:Toggle({
                 end
             end)
         else
-            Notify("黑白脚本", "已关闭吸全部玩家", 5)
+            Notify("妥协脚本", "已关闭吸全部玩家", 5)
         end
     end
 })
@@ -1631,21 +1630,21 @@ Tab3:Toggle({
         
         if enabled then
             if PlayerConfig.playernamedied == "" then
-                Notify("黑白脚本", "请先选择玩家", 5)
+                Notify("妥协脚本", "请先选择玩家", 5)
                 return
             end
             
             local targetPlayer = game:GetService("Players"):FindFirstChild(PlayerConfig.playernamedied)
             if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
                 game:GetService("Workspace").CurrentCamera.CameraSubject = targetPlayer.Character.Humanoid
-                Notify("黑白脚本", "已开启查看玩家", 5)
+                Notify("妥协脚本", "已开启查看玩家", 5)
             else
-                Notify("黑白脚本", "无法查看玩家", 5)
+                Notify("妥协脚本", "无法查看玩家", 5)
             end
         else
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 game:GetService("Workspace").CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
-                Notify("黑白脚本", "已关闭查看玩家", 5)
+                Notify("妥协脚本", "已关闭查看玩家", 5)
             end
         end
     end
@@ -1694,7 +1693,7 @@ local function ThrowPlayer(targetPlayer)
     local targetCharacter = targetPlayer.Character
     
     if not localCharacter or not localHumanoid or not localRootPart or not targetCharacter then
-        SendNotification("黑白脚本", "无法甩飞: 角色不存在", 5)
+        SendNotification("妥协脚本", "无法甩飞: 角色不存在", 5)
         return
     end
     
@@ -1709,7 +1708,7 @@ local function ThrowPlayer(targetPlayer)
     end
     
     if targetHumanoid and targetHumanoid.Sit then
-        SendNotification("黑白脚本", "玩家正在坐下", 5)
+        SendNotification("妥协脚本", "玩家正在坐下", 5)
         return
     end
     
@@ -1827,7 +1826,7 @@ local function ThrowPlayer(targetPlayer)
     elseif targetAccessory and accessoryHandle then
         PerformThrowAnimation(accessoryHandle)
     else
-        SendNotification("黑白脚本", "无法甩飞目标", 5)
+        SendNotification("妥协脚本", "无法甩飞目标", 5)
         return
     end
     
@@ -1866,7 +1865,7 @@ Tab3:Button({
     Icon = "target",
     Callback = function()
         if PlayerConfig.playernamedied == "" then
-            Notify("黑白脚本", "请先选择玩家", 5)
+            Notify("妥协脚本", "请先选择玩家", 5)
             return
         end
         
@@ -1879,16 +1878,16 @@ Tab3:Button({
                     ThrowPlayer(player)
                 end
             end
-            SendNotification("黑白脚本", "正在甩飞所有玩家", 5)
+            SendNotification("妥协脚本", "正在甩飞所有玩家", 5)
         elseif foundPlayer then
             if foundPlayer.UserId == 1414978355 then
-                SendNotification("黑白脚本", "检测到特殊玩家，已停止", 5)
+                SendNotification("妥协脚本", "检测到特殊玩家，已停止", 5)
                 return
             end
             ThrowPlayer(foundPlayer)
-            SendNotification("黑白脚本", "正在甩飞玩家", 5)
+            SendNotification("妥协脚本", "正在甩飞玩家", 5)
         else
-            SendNotification("黑白脚本", "未找到玩家", 5)
+            SendNotification("妥协脚本", "未找到玩家", 5)
         end
     end
 })
@@ -1903,7 +1902,7 @@ Tab3:Toggle({
         PlayerConfig.AutoFling = enabled
         
         if enabled then
-            Notify("黑白脚本", "已开启循环甩飞", 5)
+            Notify("妥协脚本", "已开启循环甩飞", 5)
             
             spawn(function()
                 while PlayerConfig.AutoFling do
@@ -1927,7 +1926,7 @@ Tab3:Toggle({
                 end
             end)
         else
-            Notify("黑白脚本", "已关闭循环甩飞", 5)
+            Notify("妥协脚本", "已关闭循环甩飞", 5)
         end
     end
 })
@@ -1944,12 +1943,12 @@ Tab3:Toggle({
         
         if enabled then
             if PlayerConfig.playernamedied == "" then
-                Notify("黑白脚本", "请先选择玩家", 5)
+                Notify("妥协脚本", "请先选择玩家", 5)
                 PlayerConfig.Aimbot = false
                 return
             end
             
-            Notify("黑白脚本", "已开启自瞄", 5)
+            Notify("妥协脚本", "已开启自瞄", 5)
             
             spawn(function()
                 while PlayerConfig.Aimbot do
@@ -1965,7 +1964,7 @@ Tab3:Toggle({
                 end
             end)
         else
-            Notify("黑白脚本", "已关闭自瞄", 5)
+            Notify("妥协脚本", "已关闭自瞄", 5)
         end
     end
 })
@@ -2070,11 +2069,11 @@ Window:Divider()
 local Tab97 = Tab("更多服务器")
 
 local Paragraph = Tab0:Paragraph({
-    Title = "黑白脚本DC群",
-    Desc = "点击复制按钮获取Discord邀请链接",
+    Title = "妥协脚本",
+    Desc = "🤔",
     
     -- 视觉设置
-    Image = "rbxassetid://7040347038", -- 背景图片
+    Image = "https://i.ibb.co/KzpGVsQR/153941.png", -- 背景图片
     ImageSize = 30, -- 图片显示尺寸
     Thumbnail = "", -- 缩略图（留空）
     ThumbnailSize = 80, -- 缩略图尺寸

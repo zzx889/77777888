@@ -741,9 +741,7 @@ local Tabs = {
     Settings = Window:Section({ Title = "界面", Opened = false }),
 }
 
-local TabHandles = {
-    Appearance = Tabs.Settings:Tab({ Title = "颜色", Icon = "brush" }),
-}
+local ColorTab = Tabs.Settings:Tab({ Title = "颜色", Icon = "brush" })
 
 TabHandles.Appearance:Paragraph({
     Title = "自定义界面",
@@ -759,7 +757,7 @@ for themeName, _ in pairs(WindUI:GetThemes()) do
 end
 table.sort(themes)
 
-local themeDropdown = TabHandles.Appearance:Dropdown({
+local themeDropdown = ColorTab:Dropdown({ ... })
     Title = "颜色",
     Values = themes,
     Value = "MonokaiPro",
@@ -798,9 +796,7 @@ TabHandles.Appearance:Toggle({
     end
 })
 
-local TabHandles = {
-    Appearance = Tabs.Settings:Tab({ Title = "说明", Icon = "brush" }),
-}
+local InfoTab = Tabs.Settings:Tab({ Title = "说明", Icon = "brush" })
 
 TabHandles.Appearance:Paragraph({
     Title = "使用该脚本说明",

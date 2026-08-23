@@ -3353,6 +3353,7 @@ Button(Tab2, "mic up动作\n\n好像需要麦克风", function()
         Duration = 3
     })
 end)
+    local scriptUrl = "https://raw.githubusercontent.com/0riginalWarrior/Stalkie/refs/heads/main/roblox.lua"
 Button(Tab2, "管理员\n\n不知道", function()
     local scriptUrl = "https://raw.githubusercontent.com/iK4oS/backdoor.exe/master/source.lua"
     

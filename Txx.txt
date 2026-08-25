@@ -457,7 +457,7 @@ coroutine.wrap(logoFloatAnimation)()
 coroutine.wrap(borderPulseAnimation)()
 coroutine.wrap(loadingAnimation)()
 
--- ---------- 增强 WindUI 加载（多源+容错） ----------
+-- ---------- 增强 WindUI 加载（多源+容错+完整模拟） ----------
 local WindUI = nil
 local WindUI_URLS = {
     "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua",
@@ -473,39 +473,56 @@ for _, url in ipairs(WindUI_URLS) do
         end
     end
 end
+
 if not WindUI then
-    warn("❌ WindUI 加载失败，启用极简模拟模式")
+    warn("❌ WindUI 加载失败，启用完整极简模拟模式")
+    -- 创建完整模拟 WindUI
     WindUI = {
-        CreateWindow = function() 
-            return {
-                Tab = function() return {
-                    Button = function() end,
-                    Label = function() end,
-                    Toggle = function() end,
-                    Slider = function() end,
-                    Dropdown = function() end,
-                    Paragraph = function() end,
-                    Divider = function() end,
-                    EditOpenButton = function() end,
-                    Tag = function() return { Edit = function() end } end,
-                    CreateTopbarButton = function() end,
-                    ToggleTransparency = function() end,
-                    SelectTab = function() end,
-                } end,
-                Notify = function(t) print("[模拟通知]", t.Title, t.Content) end,
-                SetTheme = function() end,
-                GetCurrentTheme = function() return "Dark" end,
-                GetThemes = function() return { Dark = {}, Light = {} } end,
-                TransparencyValue = 0,
-            }
-        end,
+        -- 模拟 Notify
         Notify = function(t) print("[模拟通知]", t.Title, t.Content) end,
         SetTheme = function() end,
         GetCurrentTheme = function() return "Dark" end,
         GetThemes = function() return { Dark = {}, Light = {} } end,
         TransparencyValue = 0,
+        -- 模拟 CreateWindow
+        CreateWindow = function()
+            local windowObj = {
+                -- Window 自身方法
+                Tag = function(_, _) 
+                    return { Edit = function(_, _) end } 
+                end,
+                EditOpenButton = function() end,
+                CreateTopbarButton = function() end,
+                ToggleTransparency = function() end,
+                SelectTab = function() end,
+                Divider = function() end,
+                -- Tab 方法（返回一个模拟 Tab 对象）
+                Tab = function(_, _)
+                    return {
+                        Button = function() end,
+                        Label = function() end,
+                        Toggle = function() end,
+                        Slider = function() end,
+                        Dropdown = function() end,
+                        Paragraph = function() end,
+                        Divider = function() end,
+                        Select = function() end,
+                        SetValues = function() end,
+                        Edit = function() end,
+                    }
+                end,
+                -- 其他可能用到的
+                Notify = function(t) print("[模拟窗口通知]", t.Title, t.Content) end,
+                SetTheme = function() end,
+                GetCurrentTheme = function() return "Dark" end,
+                GetThemes = function() return { Dark = {}, Light = {} } end,
+                TransparencyValue = 0,
+            }
+            return windowObj
+        end,
     }
 end
+
 getgenv().WindUI = WindUI
 getgenv().Notification = Notification
 

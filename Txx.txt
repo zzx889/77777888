@@ -163,9 +163,37 @@ if checkBlacklist() then
     return
 end
 
--- 加载通知库（只加载一次）
-local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A51.lua"))()
-local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A52.lua"))()
+-- ---------- 增强通知库加载 ----------
+local function safeHttpGet(url, retries, delay)
+    retries = retries or 3
+    delay = delay or 1
+    for attempt = 1, retries do
+        local success, result = pcall(game.HttpGet, game, url, true)
+        if success and result and #result > 50 then
+            return result
+        end
+        task.wait(delay)
+    end
+    return nil
+end
+
+local NotificationHolder = nil
+local Notification = nil
+local function loadNotifications()
+    local holderData = safeHttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A51.lua", 3, 1)
+    if holderData then
+        NotificationHolder = loadstring(holderData)()
+    end
+    local notifyData = safeHttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A52.lua", 3, 1)
+    if notifyData then
+        Notification = loadstring(notifyData)()
+    end
+    if not Notification then
+        warn("⚠️ 通知库加载失败，使用简易替代")
+        Notification = { Notify = function(_, desc, _, _) print("[通知]", desc.Description or "无内容") end }
+    end
+end
+loadNotifications()
 Notification:Notify(
     {Title = "正在加载脚本", Description = "请耐心等待"},
     {OutlineColor = Color3.fromRGB(255, 255, 255), Time = 20, Type = "image"},
@@ -429,24 +457,57 @@ coroutine.wrap(logoFloatAnimation)()
 coroutine.wrap(borderPulseAnimation)()
 coroutine.wrap(loadingAnimation)()
 
--- 加载 WindUI
-local WindUI
-do
-    local _ok, _result = pcall(function()
-        return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua", true))()
-    end)
-    if _ok and _result then
-        WindUI = _result
-    else
-        warn("WindUI 库加载失败: " .. tostring(_result))
+-- ---------- 增强 WindUI 加载（多源+容错） ----------
+local WindUI = nil
+local WindUI_URLS = {
+    "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua",
+    -- 如果你有其他备用源，加在这里
+}
+for _, url in ipairs(WindUI_URLS) do
+    local data = safeHttpGet(url, 2, 1.5)
+    if data then
+        local ok, result = pcall(loadstring, data)
+        if ok and result then
+            WindUI = result
+            break
+        end
     end
 end
-
--- 检查 WindUI 是否加载成功
 if not WindUI then
-    warn("❌ 脚本启动失败：WindUI 库未加载")
-    return
+    warn("❌ WindUI 加载失败，启用极简模拟模式")
+    WindUI = {
+        CreateWindow = function() 
+            return {
+                Tab = function() return {
+                    Button = function() end,
+                    Label = function() end,
+                    Toggle = function() end,
+                    Slider = function() end,
+                    Dropdown = function() end,
+                    Paragraph = function() end,
+                    Divider = function() end,
+                    EditOpenButton = function() end,
+                    Tag = function() return { Edit = function() end } end,
+                    CreateTopbarButton = function() end,
+                    ToggleTransparency = function() end,
+                    SelectTab = function() end,
+                } end,
+                Notify = function(t) print("[模拟通知]", t.Title, t.Content) end,
+                SetTheme = function() end,
+                GetCurrentTheme = function() return "Dark" end,
+                GetThemes = function() return { Dark = {}, Light = {} } end,
+                TransparencyValue = 0,
+            }
+        end,
+        Notify = function(t) print("[模拟通知]", t.Title, t.Content) end,
+        SetTheme = function() end,
+        GetCurrentTheme = function() return "Dark" end,
+        GetThemes = function() return { Dark = {}, Light = {} } end,
+        TransparencyValue = 0,
+    }
 end
+getgenv().WindUI = WindUI
+getgenv().Notification = Notification
 
 -- 再次通知
 Notification:Notify(

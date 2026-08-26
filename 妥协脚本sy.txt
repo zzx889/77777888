@@ -508,7 +508,7 @@ local Window = WindUI:CreateWindow({
     SideBarWidth = 220,
     ScrollBarEnabled = true,
     HideSearchBar = false,
-    Background = "https://i.ibb.co/KzpGVsQR/153941.png",
+    Background = "https://i.ibb.co/VcTJh7Sg/quality-restoration-20260826230136407-png.jpg",
 })
 
 Window:Tag({

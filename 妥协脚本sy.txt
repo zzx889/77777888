@@ -508,7 +508,7 @@ local Window = WindUI:CreateWindow({
     SideBarWidth = 220,
     ScrollBarEnabled = true,
     HideSearchBar = false,
-    Background = "rbxassetid://128486475405371",
+    Background = "https://i.ibb.co/KzpGVsQR/153941.png",
 })
 
 Window:Tag({
@@ -543,7 +543,7 @@ end)
 
 
 Window:EditOpenButton({
-    Title = "打开小迪妥协脚本",
+    Title = "妥协脚本",
     Icon = "monitor",
     CornerRadius = UDim.new(0,16),
     StrokeThickness = 2,
@@ -3992,28 +3992,63 @@ Button(Tab2, "动作\n\n动作包", function()
         return
     end
 
-Button(Tab2, "动作脚本\n\n有3000多个", function()
-    pcall(function()
-        local LocalPlayer = game.Players.LocalPlayer
-        if not LocalPlayer or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Humanoid") then
-            WindUI:Notify({
-                Title = "动作脚本",
-                Content = "加载失败：角色未加载完成",
-                Icon = "error",
-                Duration = 3
-            })
-            return
-        end
+    local getSuccess, scriptContent = pcall(game.HttpGet, game, scriptUrl, true)
+    if getSuccess and type(scriptContent) == "string" and scriptContent ~= "" then
+        local execSuccess = pcall(loadstring(scriptContent))
+        WindUI:Notify({
+            Title = "动作包",
+            Content = execSuccess 
+                and "已开启（动作包加载完成✨）" 
+                or "执行失败（语法/角色模型不兼容）",
+            Icon = execSuccess and "crown" or "error",
+            Duration = 3
+        })
+    else
+        local errMsg = getSuccess and "脚本内容为空" or "链接失效/网络错误"
+        WindUI:Notify({
+            Title = "动作包",
+            Content = "加载失败：" .. errMsg,
+            Icon = "error",
+            Duration = 3
+        })
+    end
+end)
 
-        local success, err = pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
-        end)
-        if success then
-            WindUI:Notify({Title = "动作脚本", Content = "已成功加载", Icon = "crown", Duration = 2})
-        else
-            WindUI:Notify({Title = "动作脚本", Content = "加载失败：" .. tostring(err), Icon = "error", Duration = 3})
-        end
-    end)
+Button(Tab2, "动作脚本\n\n有3000多个", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
+    
+    -- 校验角色人形组件，避免动作加载失败
+    local LocalPlayer = game.Players.LocalPlayer
+    if not LocalPlayer or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Humanoid") then
+        WindUI:Notify({
+            Title = "动作脚本",
+            Content = "加载失败：角色未加载完成",
+            Icon = "error",
+            Duration = 3
+        })
+        return
+    end
+
+    local getSuccess, scriptContent = pcall(game.HttpGet, game, scriptUrl, true)
+    if getSuccess and type(scriptContent) == "string" and scriptContent ~= "" then
+        local execSuccess = pcall(loadstring(scriptContent))
+        WindUI:Notify({
+            Title = "动作脚本",
+            Content = execSuccess 
+                and "已开启（动作包加载完成✨）" 
+                or "执行失败（语法/角色模型不兼容）",
+            Icon = execSuccess and "crown" or "error",
+            Duration = 3
+        })
+    else
+        local errMsg = getSuccess and "脚本内容为空" or "链接失效/网络错误"
+        WindUI:Notify({
+            Title = "动作脚本",
+            Content = "加载失败：" .. errMsg,
+            Icon = "error",
+            Duration = 3
+        })
+    end
 end)
 
 Button(Tab2, "mic up动作\n\n好像需要麦克风", function()
@@ -4199,7 +4234,7 @@ Button(Tab2, "追踪人\n\n输入玩家名字就能传送", function()
 
     -- 追踪逻辑
     TrackBtn.MouseButton1Click:Connect(function()
-        local TargetName = string.match(PlayerInput.Text, "^%s*(.-)%s*$") or ""
+        local TargetName = PlayerInput.Text:trim()
         if TargetName == "" then
             WindUI:Notify({
                 Title = "追踪失败",

@@ -2789,148 +2789,70 @@ Button(Tab1, "无敌少侠r6（飞行）\n\n太帅了", function()
     end
 end)
 
-local speedSection = Tab1:Section({ Title = "移动速度", Opened = true })
-local speedInput = speedSection:TextBox({
-    Title = "输入速度值 (1-999)",
-    Placeholder = "例如: 16",
-    Value = tostring(game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed or 16),
-    Callback = function(text)
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, 1, 999)
-            applyWalkSpeed(num)
-            speedInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
-speedSection:Button({
-    Title = "应用速度",
-    Callback = function()
-        local text = speedInput:GetValue() -- 假设 GetValue 存在，否则用 speedInput.Value
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, 1, 999)
-            applyWalkSpeed(num)
-            speedInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
+-- ========== 通用调节项（纯按钮式，不嵌套任何容器） ==========
+-- 1. 移动速度
+local speedVal = 16
+local speedLabel = Tab1:Label({ Title = "移动速度: " .. speedVal })
+Tab1:Button({ Title = "速度 -5", Callback = function()
+    speedVal = math.max(1, speedVal - 5)
+    applyWalkSpeed(speedVal)
+    speedLabel:Edit({ Title = "移动速度: " .. speedVal })
+end})
+Tab1:Button({ Title = "速度 +5", Callback = function()
+    speedVal = math.min(999, speedVal + 5)
+    applyWalkSpeed(speedVal)
+    speedLabel:Edit({ Title = "移动速度: " .. speedVal })
+end})
 
 -- 2. 跳跃高度
-local jumpSection = Tab1:Section({ Title = "跳跃高度", Opened = true })
-local jumpInput = jumpSection:TextBox({
-    Title = "输入跳跃值 (1-999)",
-    Placeholder = "例如: 50",
-    Value = tostring(game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") and game.Players.LocalPlayer.Character.Humanoid.JumpPower or 50),
-    Callback = function(text)
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, 1, 999)
-            applyJumpPower(num)
-            jumpInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
-jumpSection:Button({
-    Title = "应用跳跃",
-    Callback = function()
-        local text = jumpInput:GetValue()
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, 1, 999)
-            applyJumpPower(num)
-            jumpInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
+local jumpVal = 50
+local jumpLabel = Tab1:Label({ Title = "跳跃高度: " .. jumpVal })
+Tab1:Button({ Title = "跳跃 -5", Callback = function()
+    jumpVal = math.max(1, jumpVal - 5)
+    applyJumpPower(jumpVal)
+    jumpLabel:Edit({ Title = "跳跃高度: " .. jumpVal })
+end})
+Tab1:Button({ Title = "跳跃 +5", Callback = function()
+    jumpVal = math.min(999, jumpVal + 5)
+    applyJumpPower(jumpVal)
+    jumpLabel:Edit({ Title = "跳跃高度: " .. jumpVal })
+end})
 
 -- 3. 重力设置
-local gravitySection = Tab1:Section({ Title = "重力设置", Opened = true })
-local gravityInput = gravitySection:TextBox({
-    Title = "输入重力值 (-50 ~ 400)",
-    Placeholder = "例如: 196",
-    Value = tostring(workspace.Gravity),
-    Callback = function(text)
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, -50, 400)
-            workspace.Gravity = num
-            gravityInput:Edit({ Value = tostring(num) })
-            WindUI:Notify({ Title = "重力已更新", Content = "当前重力: " .. num, Icon = "check", Duration = 2 })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
-gravitySection:Button({
-    Title = "应用重力",
-    Callback = function()
-        local text = gravityInput:GetValue()
-        local num = tonumber(text)
-        if num then
-            num = math.clamp(num, -50, 400)
-            workspace.Gravity = num
-            gravityInput:Edit({ Value = tostring(num) })
-            WindUI:Notify({ Title = "重力已更新", Content = "当前重力: " .. num, Icon = "check", Duration = 2 })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
+local gravVal = workspace.Gravity
+local gravLabel = Tab1:Label({ Title = "重力: " .. gravVal })
+Tab1:Button({ Title = "重力 -10", Callback = function()
+    gravVal = math.max(-50, gravVal - 10)
+    workspace.Gravity = gravVal
+    gravLabel:Edit({ Title = "重力: " .. gravVal })
+end})
+Tab1:Button({ Title = "重力 +10", Callback = function()
+    gravVal = math.min(400, gravVal + 10)
+    workspace.Gravity = gravVal
+    gravLabel:Edit({ Title = "重力: " .. gravVal })
+end})
 
 -- 4. 修改生命值
-local healthSection = Tab1:Section({ Title = "修改生命值", Opened = true })
-local healthInput = healthSection:TextBox({
-    Title = "输入生命值 (1 ~ 最大)",
-    Placeholder = "例如: 100",
-    Value = tostring(game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") and game.Players.LocalPlayer.Character.Humanoid.Health or 100),
-    Callback = function(text)
-        local num = tonumber(text)
-        if num then
-            applyHealth(num)
-            healthInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
-healthSection:Button({
-    Title = "应用生命值",
-    Callback = function()
-        local text = healthInput:GetValue()
-        local num = tonumber(text)
-        if num then
-            applyHealth(num)
-            healthInput:Edit({ Value = tostring(num) })
-        else
-            WindUI:Notify({ Title = "无效输入", Content = "请输入有效数字", Icon = "error", Duration = 2 })
-        end
-    end
-})
+local healthVal = 100
+local healthLabel = Tab1:Label({ Title = "生命值: " .. healthVal })
+Tab1:Button({ Title = "生命 -10", Callback = function()
+    healthVal = math.max(1, healthVal - 10)
+    applyHealth(healthVal)
+    healthLabel:Edit({ Title = "生命值: " .. healthVal })
+end})
+Tab1:Button({ Title = "生命 +10", Callback = function()
+    healthVal = math.min(999, healthVal + 10)
+    applyHealth(healthVal)
+    healthLabel:Edit({ Title = "生命值: " .. healthVal })
+end})
 
--- ========== 辅助函数（已存在，但为了完整性保留） ==========
+-- ========== 辅助函数（已存在则无需重复定义，但保留以防万一） ==========
 local function applyWalkSpeed(speed)
     pcall(function()
         local char = game.Players.LocalPlayer.Character
         if char then
             local hum = char:FindFirstChild("Humanoid")
-            if hum then
-                hum.WalkSpeed = speed
-                print("[速度] 已设置为:", speed)
-                WindUI:Notify({ Title = "速度已更新", Content = "当前速度: " .. speed, Icon = "check", Duration = 2 })
-            else
-                warn("Humanoid 未找到")
-            end
-        else
-            warn("角色未加载")
+            if hum then hum.WalkSpeed = speed end
         end
     end)
 end
@@ -2940,15 +2862,7 @@ local function applyJumpPower(power)
         local char = game.Players.LocalPlayer.Character
         if char then
             local hum = char:FindFirstChild("Humanoid")
-            if hum then
-                hum.JumpPower = power
-                print("[跳跃] 已设置为:", power)
-                WindUI:Notify({ Title = "跳跃已更新", Content = "当前跳跃: " .. power, Icon = "check", Duration = 2 })
-            else
-                warn("Humanoid 未找到")
-            end
-        else
-            warn("角色未加载")
+            if hum then hum.JumpPower = power end
         end
     end)
 end
@@ -2960,32 +2874,10 @@ local function applyHealth(value)
             local hum = char:FindFirstChild("Humanoid")
             if hum then
                 hum.Health = math.clamp(value, 0, hum.MaxHealth)
-                print("[生命值] 已设置为:", hum.Health)
-                WindUI:Notify({ Title = "生命值已更新", Content = "当前生命: " .. hum.Health, Icon = "heart", Duration = 2 })
-            else
-                warn("Humanoid 未找到")
             end
-        else
-            warn("角色未加载")
         end
     end)
 end
-
--- 初始化时显示当前值（如果角色存在）
-task.wait(0.5)
-pcall(function()
-    local char = game.Players.LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            speedInput:Edit({ Value = tostring(hum.WalkSpeed) })
-            jumpInput:Edit({ Value = tostring(hum.JumpPower) })
-            healthInput:Edit({ Value = tostring(hum.Health) })
-        end
-    end
-    gravityInput:Edit({ Value = tostring(workspace.Gravity) })
-end)
-
 
 Toggle(Tab1, "穿墙", false, function(a)
     pcall(function()

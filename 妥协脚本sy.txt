@@ -2789,29 +2789,140 @@ Button(Tab1, "无敌少侠r6（飞行）\n\n太帅了", function()
     end
 end)
 
-Slider(Tab1, "移动速度", 1, 999, game.Players.LocalPlayer.Character.Humanoid.WalkSpeed, function(a) 
-    pcall(function()
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = a
-    end)
-end)
+local tempWalkSpeed = 16  -- 默认速度
 
-Slider(Tab1, "跳跃高度", 1, 999, game.Players.LocalPlayer.Character.Humanoid.JumpPower, function(a) 
-    pcall(function()
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = a
-    end)
-end)
+-- 滑块（只保存值，不立即应用）
+local speedSlider = Tab1:Slider({
+    Title = "移动速度",
+    Min = 1,
+    Max = 999,
+    Default = tempWalkSpeed,
+    Callback = function(value)
+        tempWalkSpeed = value
+        -- 可加实时显示（可选）
+        -- 比如更新一个Label，但这里不操作
+    end
+})
 
-Slider(Tab1, "重力设置", -50, 400, workspace.Gravity, function(a) 
-    pcall(function()
-        workspace.Gravity = a
-    end)
-end)
+-- 应用按钮
+Tab1:Button({
+    Title = "应用速度",
+    Icon = "check",
+    Callback = function()
+        applyWalkSpeed(tempWalkSpeed)
+    end
+})
 
-Slider(Tab1, "修改生命值", 1, 999, game.Players.LocalPlayer.Character.Humanoid.Health, function(a) 
+-- 速度应用函数（含安全检查）
+local function applyWalkSpeed(speed)
     pcall(function()
-        game.Players.LocalPlayer.Character.Humanoid.Health = a
+        local char = game.Players.LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                hum.WalkSpeed = speed
+                print("[速度] 已设置为:", speed)
+                -- 可选：弹出通知
+                WindUI:Notify({
+                    Title = "速度已更新",
+                    Content = "当前速度: " .. speed,
+                    Icon = "check",
+                    Duration = 2
+                })
+            else
+                warn("Humanoid 未找到，速度未设置")
+            end
+        else
+            warn("角色未加载，速度未设置")
+        end
     end)
-end)
+end
+
+-- 初始化一次（如果角色已加载则应用默认值）
+applyWalkSpeed(tempWalkSpeed)
+
+local tempJumpPower = 50
+local jumpSlider = Tab1:Slider({
+    Title = "跳跃高度",
+    Min = 1,
+    Max = 999,
+    Default = tempJumpPower,
+    Callback = function(v) tempJumpPower = v end
+})
+Tab1:Button({
+    Title = "应用跳跃高度",
+    Callback = function()
+        pcall(function()
+            local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+            if hum then hum.JumpPower = tempJumpPower end
+        end)
+    end
+})
+
+local tempGravity = workspace.Gravity
+local gravitySlider = Tab1:Slider({
+    Title = "重力设置",
+    Min = -50,
+    Max = 400,
+    Default = tempGravity,
+    Callback = function(v) tempGravity = v end
+})
+Tab1:Button({
+    Title = "应用重力",
+    Callback = function()
+        workspace.Gravity = tempGravity
+    end
+})
+
+-- ========== 修改生命值（滑块 + 应用按钮） ==========
+local tempHealth = 100  -- 默认生命值
+
+-- 滑块（只保存值，不立即应用）
+local healthSlider = Tab1:Slider({
+    Title = "修改生命值",
+    Min = 1,
+    Max = 999,
+    Default = tempHealth,
+    Callback = function(value)
+        tempHealth = value
+    end
+})
+
+-- 应用按钮
+Tab1:Button({
+    Title = "应用生命值",
+    Icon = "heart",
+    Callback = function()
+        applyHealth(tempHealth)
+    end
+})
+
+-- 生命值应用函数（含安全检查）
+local function applyHealth(value)
+    pcall(function()
+        local char = game.Players.LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                hum.Health = math.clamp(value, 0, hum.MaxHealth)  -- 不超出最大值
+                print("[生命值] 已设置为:", hum.Health)
+                WindUI:Notify({
+                    Title = "生命值已更新",
+                    Content = "当前生命: " .. hum.Health,
+                    Icon = "heart",
+                    Duration = 2
+                })
+            else
+                warn("Humanoid 未找到")
+            end
+        else
+            warn("角色未加载")
+        end
+    end)
+end
+
+-- 初始化（如果角色存在则应用默认值）
+applyHealth(tempHealth)
 
 
 Toggle(Tab1, "穿墙", false, function(a)

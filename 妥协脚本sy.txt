@@ -2066,8 +2066,9 @@ local Tab93 = Tab(" [1.0] 基础论文教育 RP")
 local Tab94 = Tab("[🎅🏻]在筏子上生存")
 local Tab95 = Tab("挂杆塔")
 local Tab96 = Tab("终极采矿大亨")
+local Tab97 = Tab("偷一个蛋")
 Window:Divider()
-local Tab97 = Tab("更多服务器")
+local Tab98 = Tab("更多服务器")
 
 local Paragraph = Tab0:Paragraph({
     Title = "妥协脚本",
@@ -3156,6 +3157,12 @@ Button(Tab1, "无头加kor\n\n不知道", function()
             Duration = 3
         })
     end
+end)
+
+Button(Tab1, "祖国人汉化", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))()
+    end)
 end)
 
 Button(Tab1, "自瞄\n\n自瞄", function()
@@ -5105,9 +5112,9 @@ Button(Tab6, "迪脚本", function()
     end)
 end)
 
-Button(Tab6, "Xi脚本", function()
+Button(Tab6, "大司马V6", function()
     pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/123fa98/Code/refs/heads/main/Xi_Pro_Scipt.lua"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/whenheer/dasimav6/refs/heads/main/dasimaV6.txt"))()
     end)
 end)
 
@@ -5204,9 +5211,10 @@ Button(Tab6, "SN中心", function()
     end)
 end)
 
-Button(Tab6, "Xi脚本", function()
+Button(Tab6, "霖溺", function()
     pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/123fa98/Code/refs/heads/main/Xi_Pro_Scipt.lua"))()
+        LnScript = "霖溺-免费版加载器"
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ShenJiaoBen/ScriptLoader/refs/heads/main/Linni_FreeLoader.lua"))()
     end)
 end)
 
@@ -5294,9 +5302,9 @@ Button(Tab6, "帝脚本", function()
     end)
 end)
 
-Button(Tab6, "旧黑白脚本", function()
+Button(Tab6, "叶脚本", function()
     pcall(function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/tfcygvunbind/Apple/0a572fcc356231593d062f45acedbcdad42c6fd8/%E9%BB%91%E7%99%BD%E8%84%9A%E6%9C%AC'))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/yejiaoben"))()
     end)
 end)
 
@@ -5343,6 +5351,61 @@ Button(Tab6, "SX HUB V2", function()
     pcall(function()
     --[超强脚本 已经更新至V2 脚本加载大约15秒左右 请耐心等待 QQ主群566257944]
 loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/87a8a4f4c2d2ef535ccd1bdb949218fe.lua"))()
+    end)
+end)
+
+Button(Tab6, "Ink脚本", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/zczczczc766/ink/refs/heads/main/ink.lua"))()
+    end)
+end)
+
+Button(Tab6, "tubers93脚本）", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Wbw1470619303-ctrl/w-/refs/heads/main/%E5%8F%AF%E4%BB%A5%E7%94%A8%E7%9A%84%E4%B8%BB%E8%84%9A%E6%9C%AC%E6%B7%B7%E6%B7%86%E5%90%8E%E7%9A%84.lua"))()
+    end)
+end)
+
+Button(Tab6, "羽脚本v2", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/JY6812/-/refs/heads/main/%E7%BE%BD%E8%84%9A%E6%9C%ACv2.lua",true))()
+    end)
+end)
+
+Button(Tab6, "robv4", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/idrobsc/rob_script/refs/heads/main/rob.v4"))()
+    end)
+end)
+
+Button(Tab6, "XK脚本加载器", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SyndromeXph/XK-Script/refs/heads/main/XoneK-Loader.luau"))()
+    end)
+end)
+
+Button(Tab6, "Rb-Hub", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Yungengxin/roblox/refs/heads/main/Rb-Hub"))()
+    end)
+end)
+
+Button(Tab6, "神青脚本", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/gycgchgyfytdttr/QQ-9-2-8-9-50173/refs/heads/main/newsqnb.lua"))()
+    end)
+end)
+
+Button(Tab6, "xaHub", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.gitcode.com/Xingtaiduan/Scripts/raw/main/Loader.lua"))()
+    end)
+end)
+
+Button(Tab6, "TX脚本", function()
+    pcall(function()
+        TX = "TX Script"
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/JsYb666/TX-Free/refs/heads/main/TX-V4.0"))()
     end)
 end)
 
@@ -8042,8 +8105,14 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ShenJiaoBen/Partial-S
     end)
 end)
 
--- 更多 (Tab97)
-Button(Tab97, "服务器二", function()
+Button(Tab97, "偷一个蛋外网", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua"))()
+    end)
+end)
+
+-- 更多 (Tab98)
+Button(Tab98, "服务器二", function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E6%9C%8D%E5%8A%A1%E5%99%A82%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86.lua"))()
     end)

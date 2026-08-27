@@ -2786,67 +2786,43 @@ Button(Tab1, "无敌少侠r6（飞行）\n\n太帅了", function()
     end
 end)
 
-getgenv().CustomWalkSpeed = 16
-Slider(Tab1, "移动速度", 1, 999, 16, function(v)
-    getgenv().CustomWalkSpeed = v
-end)
-task.spawn(function()
-    while task.wait(0.1) do
-        local char = LocalPlayer.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.WalkSpeed = getgenv().CustomWalkSpeed or 16
-            end
-        end
+Tab1:Slider({
+    Title = "移动速度",
+    Value = {
+        Min = 1,
+        Max = 999,
+        Default = 16,
+    },
+    Callback = function(v)
+        getgenv().CustomWalkSpeed = v
     end
-end)
+})
 
--- 2. 跳跃高度
-getgenv().CustomJumpPower = 50
-Slider(Tab1, "跳跃高度", 1, 999, 50, function(v)
-    getgenv().CustomJumpPower = v
-end)
-task.spawn(function()
-    while task.wait(0.1) do
-        local char = LocalPlayer.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.UseJumpPower = true
-                hum.JumpPower = getgenv().CustomJumpPower or 50
-            end
-        end
+Tab1:Slider({
+    Title = "跳跃高度",
+    Value = { Min = 1, Max = 999, Default = 50 },
+    Callback = function(v)
+        getgenv().CustomJumpPower = v
     end
-end)
+})
 
--- 3. 重力设置
-getgenv().CustomGravity = workspace.Gravity
-Slider(Tab1, "重力设置", -50, 400, workspace.Gravity, function(v)
-    getgenv().CustomGravity = v
-end)
-task.spawn(function()
-    while task.wait(0.1) do
-        workspace.Gravity = getgenv().CustomGravity or workspace.Gravity
+Tab1:Slider({
+    Title = "重力设置",
+    Value = { Min = -50, Max = 400, Default = workspace.Gravity },
+    Callback = function(v)
+        getgenv().CustomGravity = v
     end
-end)
+})
 
--- 4. 修改生命值（注意：生命值持续设置可能被游戏反作弊限制，仅作示例）
-getgenv().CustomHealth = 100
-Slider(Tab1, "修改生命值", 1, 999, 100, function(v)
-    getgenv().CustomHealth = v
-end)
-task.spawn(function()
-    while task.wait(0.1) do
-        local char = LocalPlayer.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.Health = math.clamp(getgenv().CustomHealth or 100, 0, hum.MaxHealth)
-            end
-        end
+TabHandles.Appearance:Slider({
+    Title = "透明度",
+    Value = { Min = 0, Max = 1, Default = 0.2 },
+    Step = 0.1,
+    Callback = function(value)
+        Window:ToggleTransparency(tonumber(value) > 0)
+        WindUI.TransparencyValue = tonumber(value)
     end
-end)
+})
 
 Toggle(Tab1, "穿墙", false, function(a)
     pcall(function()

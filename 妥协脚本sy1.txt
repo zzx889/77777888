@@ -2786,41 +2786,102 @@ Button(Tab1, "无敌少侠r6（飞行）\n\n太帅了", function()
     end
 end)
 
-Tab1:Slider({
+-- ========== 玩家功能（新格式）==========
+
+-- 定义必要变量
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local FastRunSpeed = 50
+local sudu = nil
+
+-- 移动速度
+PlayerFuncTab:Slider({
     Title = "移动速度",
-    Value = {
-        Min = 1,
-        Max = 999,
-        Default = 16,
-    },
+    Value = { Min = 16, Max = 400, Default = 16 },
+    Increment = 1,
     Callback = function(v)
         getgenv().CustomWalkSpeed = v
     end
 })
+task.spawn(function()
+    while true do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Parent then
+            hum.WalkSpeed = getgenv().CustomWalkSpeed or 16
+        end
+        task.wait(0.1)
+    end
+end)
 
-Tab1:Slider({
+-- 跳跃高度
+PlayerFuncTab:Slider({
     Title = "跳跃高度",
-    Value = { Min = 1, Max = 999, Default = 50 },
+    Value = { Min = 50, Max = 600, Default = 50 },
+    Increment = 1,
     Callback = function(v)
         getgenv().CustomJumpPower = v
     end
 })
+task.spawn(function()
+    while true do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Parent then
+            hum.UseJumpPower = true
+            hum.JumpPower = getgenv().CustomJumpPower or 50
+        end
+        task.wait(0.1)
+    end
+end)
 
-Tab1:Slider({
+-- 重力设置（新生成）
+PlayerFuncTab:Slider({
     Title = "重力设置",
-    Value = { Min = -50, Max = 400, Default = workspace.Gravity },
+    Value = { Min = -100, Max = 500, Default = workspace.Gravity },
+    Increment = 1,
     Callback = function(v)
         getgenv().CustomGravity = v
     end
 })
+task.spawn(function()
+    while true do
+        workspace.Gravity = getgenv().CustomGravity or workspace.Gravity
+        task.wait(0.1)
+    end
+end)
 
-TabHandles.Appearance:Slider({
-    Title = "透明度",
-    Value = { Min = 0, Max = 1, Default = 0.2 },
-    Step = 0.1,
-    Callback = function(value)
-        Window:ToggleTransparency(tonumber(value) > 0)
-        WindUI.TransparencyValue = tonumber(value)
+-- 开启快速跑步
+PlayerFuncTab:Toggle({
+    Title = "开启快速跑步",
+    Default = false,
+    Callback = function(enabled)
+        if enabled then
+            if sudu then sudu:Disconnect() end
+            sudu = RunService.Heartbeat:Connect(function()
+                local lp = LocalPlayer
+                if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.MoveDirection.Magnitude > 0 then
+                    lp.Character:TranslateBy(lp.Character.Humanoid.MoveDirection * FastRunSpeed / 0.5)
+                end
+            end)
+        else
+            if sudu then
+                sudu:Disconnect()
+                sudu = nil
+            end
+        end
+    end
+})
+
+-- 快速跑步强度
+PlayerFuncTab:Input({
+    Title = "快速跑步强度",
+    Placeholder = "50",
+    Callback = function(text)
+        local n = tonumber(text)
+        if n then
+            FastRunSpeed = math.clamp(n, 0, 200)
+        end
     end
 })
 

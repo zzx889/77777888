@@ -2076,7 +2076,7 @@ local Paragraph = Tab0:Paragraph({
     
     -- 视觉设置
     Image = "https://i.ibb.co/KzpGVsQR/153941.png", -- 背景图片
-    ImageSize = 30, -- 图片显示尺寸
+    ImageSize = 80, -- 图片显示尺寸
     Thumbnail = "", -- 缩略图（留空）
     ThumbnailSize = 80, -- 缩略图尺寸
     

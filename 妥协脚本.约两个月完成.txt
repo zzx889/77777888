@@ -1,0 +1,1852 @@
+if _G.__CompromiseHub_Loaded__ then
+	warn("[妥协脚本] 已运行，请重进游戏后再注入")
+	return
+end
+_G.__CompromiseHub_Loaded__ = true
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ============================================================
+-- 加载 WindUI 和通知库
+-- ============================================================
+local WindUI, NotificationHolder, Notification
+local loadOK = pcall(function()
+	WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+	NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A51.lua"))()
+	Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaodi7598/-1.0/refs/heads/main/%E9%80%9A%E7%9F%A52.lua"))()
+end)
+if not loadOK or not WindUI then
+	warn("[妥协脚本] WindUI 加载失败，请检查网络")
+	return
+end
+
+-- ============================================================
+-- 创建主窗口
+-- ============================================================
+local Window = WindUI:CreateWindow({
+	Title = '<font color="#257AF7">妥</font><font color="#4D94FF">协</font><font color="#257AF7">脚</font><font color="#4D94FF">本</font>    ',
+	Icon = "badge-check",
+	Author = "作者:妥协",
+	Folder = "WindUI_Example",
+	Size = UDim2.fromOffset(300, 350),
+	Theme = "Dark",
+	Background = "rbxassetid://86990860892252",
+	BackgroundTransparency = 0.45,
+	User = {
+		Enabled = true,
+		Anonymous = false,
+		Callback = function()
+			WindUI:Notify({ Title = "复制失败", Content = "错误", Duration = 3 })
+		end
+	},
+	SideBarWidth = 220,
+	ScrollBarEnabled = true,
+	HideSearchBar = false,
+	ToggleKey = Enum.KeyCode.RightShift,
+	OpenButton = {
+		Title = "妥协脚本",
+		CornerRadius = UDim.new(1, 0),
+		Enabled = true,
+		Draggable = true,
+		Scale = 0.75,
+		Color = ColorSequence.new(
+			Color3.fromHex("#257AF7"),
+			Color3.fromHex("#FFFFFF")
+		),
+	},
+	Topbar = { Height = 44, ButtonsType = "Default" },
+})
+
+-- ============================================================
+-- 配色定义
+-- ============================================================
+local BlueMain = Color3.fromHex("#257AF7")
+local BlueLight = Color3.fromHex("#4D94FF")
+local BlueDark = Color3.fromHex("#1A5BBF")
+local White = Color3.fromHex("#FFFFFF")
+local Grey = Color3.fromHex("#83889E")
+local Red = Color3.fromHex("#EF4F1D")
+
+-- ============================================================
+-- 顶栏标签
+-- ============================================================
+pcall(function()
+	local versionTag = Window:Tag({
+		Title = "v" .. tostring(WindUI.Version or "妥协1.0.1"),
+		Icon = "github",
+		Color = Color3.fromHex("#257AF7"),
+		Border = true,
+	})
+	pcall(function()
+		local tagIns = versionTag.Instance
+		if not tagIns then return end
+		local oldGrad = tagIns:FindFirstChildOfClass("UIGradient")
+		if oldGrad then oldGrad:Destroy() end
+		local g = Instance.new("UIGradient")
+		g.Rotation = 0
+		g.Color = ColorSequence.new(Color3.fromHex("#257AF7"), Color3.fromHex("#FFFFFF"))
+		g.Parent = tagIns
+	end)
+	Window:Tag({ Title = "测试版", Icon = "shield", Color = BlueMain, Border = true })
+	local timeTopTag = Window:Tag({
+		Title = os.date("%H:%M:%S"),
+		Icon = "clock",
+		Color = Color3.fromHex("#ECA201"),
+		Border = true,
+	})
+	task.spawn(function()
+		while task.wait(1) do
+			if not Window.Instance then break end
+			timeTopTag:SetTitle(os.date("%H:%M:%S"))
+		end
+	end)
+end)
+
+-- ============================================================
+-- 工具函数
+-- ============================================================
+function getIcon(title) return 0 end
+local headSizeConnections = {}
+local currentGravity = nil
+local gravityLoopRunning = false
+local noclipLoop = nil
+local infiniteJumpLoop = nil
+local flyGuiCreated = false -- 防止重复创建飞行GUI
+
+local function ExitScript()
+	_G.__CompromiseHub_Loaded__ = nil
+	gravityLoopRunning = false
+	if noclipLoop then noclipLoop:Disconnect() noclipLoop = nil end
+	if infiniteJumpLoop then infiniteJumpLoop:Disconnect() infiniteJumpLoop = nil end
+	for _, conn in pairs(headSizeConnections) do conn:Disconnect() end
+	headSizeConnections = {}
+	if Window and Window.Destroy then Window:Destroy() end
+end
+
+-- ============================================================
+-- UI构建
+-- ============================================================
+local buildOK, buildErr = pcall(function()
+
+-- ============== 主界面 ==============
+do
+	local HomeTab = Window:Tab({
+		Title = "主界面",
+		Icon = "solar:home-2-bold",
+		IconColor = BlueMain,
+		IconShape = "Square",
+		Border = true,
+	})
+	HomeTab:Section({ Title = "欢迎尊贵的妥协脚本用户", TextSize = 20, FontWeight = Enum.FontWeight.SemiBold })
+	HomeTab:Paragraph({
+		Title = "妥协脚本",
+		Desc = "WindUI 远程加载，手机可直接复制。\n时间已移到窗口右上角顶部标签。",
+	})
+	HomeTab:Space()
+	HomeTab:Image({
+		Url = "rbxassetid://86990860892252",
+		Size = UDim2.new(0, 220, 0, 220),
+	})
+	HomeTab:Space()
+	
+	-- ====== 新增：玩家信息展示 ======
+	HomeTab:Section({ Title = "玩家与服务器信息", TextSize = 16 })
+	-- 获取信息（使用 pcall 避免意外错误）
+	local clientId, serverId, accountDays, accountYear
+	pcall(function()
+		local HttpService = game:GetService("HttpService")
+		clientId = HttpService:GenerateGUID(false)
+	end)
+	pcall(function()
+		serverId = game.JobId
+	end)
+	pcall(function()
+		local player = game.Players.LocalPlayer
+		if player then
+			accountDays = math.floor(player.AccountAge)
+			accountYear = tonumber(string.format("%.2f", accountDays / 365))
+		end
+	end)
+	
+	-- 显示各项信息（每个信息用 Paragraph 展示，标题和描述分开）
+	HomeTab:Paragraph({ Title = "用户名:", Desc = game.Players.LocalPlayer.Name })
+	HomeTab:Paragraph({ Title = "用户ID:", Desc = tostring(game.Players.LocalPlayer.UserId) })
+	HomeTab:Paragraph({ Title = "客户端ID:", Desc = clientId or "获取失败" })
+	HomeTab:Paragraph({ Title = "地区:", Desc = "TW" })  -- 可改为实际获取方法
+	HomeTab:Paragraph({ Title = "语言:", Desc = "zh-cn" })
+	HomeTab:Paragraph({ Title = "账户年龄(天):", Desc = tostring(accountDays or 0) })
+	HomeTab:Paragraph({ Title = "账户年龄(年):", Desc = tostring(accountYear or 0) })
+	HomeTab:Paragraph({ Title = "注入器:", Desc = "Delta" })  -- 可自定义
+	HomeTab:Paragraph({ Title = "服务器ID:", Desc = serverId or "获取失败" })
+	HomeTab:Paragraph({ Title = "服务器位置ID:", Desc = "97152974415088" })  -- 固定值或动态获取
+	HomeTab:Paragraph({ Title = "服务器在线人数:", Desc = tostring(#game:GetService("Players"):GetPlayers()) })
+end
+
+-- ============== 玩家（整合全部功能分区版） ==============
+do
+	local Speed = 16
+	local sudu = nil
+	local PlayerTab = Window:Tab({
+		Title = "玩家",
+		Icon = "users",
+		IconColor = BlueLight,
+		IconShape = "Square",
+		Border = true,
+	})
+	-- ==================== 分区1：基础属性 ====================
+	PlayerTab:Section({ Title = "基础功能", TextSize = 16 })
+	PlayerTab:Slider({
+		Title = "跳跃",
+		Desc = "",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 16, Max = 500, Default = 16 },
+		Callback = function(Value)
+			pcall(function()
+				local char = game.Players.LocalPlayer.Character
+				if char and char:FindFirstChildOfClass("Humanoid") then
+					char.Humanoid.JumpPower = Value
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Slider({
+		Title = "速度",
+		Desc = "",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 16, Max = 500, Default = 16 },
+		Callback = function(Value)
+			pcall(function()
+				local char = game.Players.LocalPlayer.Character
+				if char and char:FindFirstChildOfClass("Humanoid") then
+					char.Humanoid.WalkSpeed = Value
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Slider({
+		Title = "血量",
+		Desc = "",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 1, Max = 999999999, Default = 100 },
+		Callback = function(Value)
+			pcall(function()
+				local char = game.Players.LocalPlayer.Character
+				if char and char:FindFirstChildOfClass("Humanoid") then
+					char.Humanoid.Health = Value
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Space()
+	-- ==================== 分区：实用功能 ====================
+	PlayerTab:Section({ Title = "功能", TextSize = 16 })
+	-- 高跳
+	PlayerTab:Toggle({
+		Title = "高跳",
+		Desc = "大幅提升跳跃高度",
+		Value = false,
+		Callback = function(state)
+			pcall(function()
+				local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.JumpPower = state and 500 or 50
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 无摔落伤害
+	PlayerTab:Toggle({
+		Title = "无摔落伤害",
+		Desc = "高处掉落不受伤",
+		Value = false,
+		Callback = function(state)
+			pcall(function()
+				local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, not state)
+					humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, not state)
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 夜视
+	PlayerTab:Toggle({
+		Title = "夜视",
+		Desc = "增强环境亮度",
+		Value = false,
+		Callback = function(state)
+			pcall(function()
+				local lighting = game:GetService("Lighting")
+				lighting.Brightness = state and 2 or 1
+				lighting.Ambient = state and Color3.new(1,1,1) or Color3.new(0,0,0)
+				lighting.OutdoorAmbient = state and Color3.new(1,1,1) or Color3.new(0.5,0.5,0.5)
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 穿墙
+	PlayerTab:Toggle({
+		Title = "穿墙",
+		Desc = "穿过墙壁和物体",
+		Value = false,
+		Callback = function(state)
+			pcall(function()
+				if state then
+					if noclipLoop then noclipLoop:Disconnect() end
+					noclipLoop = game:GetService("RunService").Heartbeat:Connect(function()
+						local character = game.Players.LocalPlayer.Character
+						if character then
+							for _, part in pairs(character:GetDescendants()) do
+								if part:IsA("BasePart") then part.CanCollide = false end
+							end
+						end
+					end)
+				else
+					if noclipLoop then noclipLoop:Disconnect() noclipLoop = nil end
+					local character = game.Players.LocalPlayer.Character
+					if character then
+						for _, part in pairs(character:GetDescendants()) do
+							if part:IsA("BasePart") then part.CanCollide = true end
+						end
+					end
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 无限跳跃（修复版）
+	PlayerTab:Toggle({
+		Title = "无限跳跃",
+		Desc = "按住空格连续跳跃",
+		Value = false,
+		Callback = function(state)
+			pcall(function()
+				if state then
+					if infiniteJumpLoop then infiniteJumpLoop:Disconnect() end
+					local UIS = game:GetService("UserInputService")
+					infiniteJumpLoop = game:GetService("RunService").Heartbeat:Connect(function()
+						local character = game.Players.LocalPlayer.Character
+						local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+						if humanoid and humanoid.Health > 0 then
+							if UIS:IsKeyDown(Enum.KeyCode.Space) then
+								humanoid.Jump = true
+							end
+						end
+					end)
+				else
+					if infiniteJumpLoop then
+						infiniteJumpLoop:Disconnect()
+						infiniteJumpLoop = nil
+					end
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 飞行V3按钮
+	PlayerTab:Button({
+		Title = "飞行V3",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "paper-plane",
+		Callback = function()
+			pcall(function()
+				if flyGuiCreated then
+					WindUI:Notify({ Title = "飞行", Content = "飞行GUI已存在", Duration = 2 })
+					return
+				end
+				flyGuiCreated = true
+				local main = Instance.new("ScreenGui")
+				local Frame = Instance.new("Frame")
+				local up = Instance.new("TextButton")
+				local down = Instance.new("TextButton")
+				local onof = Instance.new("TextButton")
+				local TextLabel = Instance.new("TextLabel")
+				local plus = Instance.new("TextButton")
+				local speed = Instance.new("TextLabel")
+				local mine = Instance.new("TextButton")
+				local closebutton = Instance.new("TextButton")
+				local mini = Instance.new("TextButton")
+				local mini2 = Instance.new("TextButton")
+				main.Name = "main"
+				main.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+				main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+				main.ResetOnSpawn = false
+				Frame.Parent = main
+				Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
+				Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
+				Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
+				Frame.Size = UDim2.new(0, 190, 0, 57)
+				up.Name = "up"
+				up.Parent = Frame
+				up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
+				up.Size = UDim2.new(0, 44, 0, 28)
+				up.Font = Enum.Font.SourceSans
+				up.Text = "up"
+				up.TextColor3 = Color3.fromRGB(0, 0, 0)
+				up.TextSize = 14.000
+				down.Name = "down"
+				down.Parent = Frame
+				down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
+				down.Position = UDim2.new(0, 0, 0.491228074, 0)
+				down.Size = UDim2.new(0, 44, 0, 28)
+				down.Font = Enum.Font.SourceSans
+				down.Text = "down"
+				down.TextColor3 = Color3.fromRGB(0, 0, 0)
+				down.TextSize = 14.000
+				onof.Name = "onof"
+				onof.Parent = Frame
+				onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
+				onof.Position = UDim2.new(0.702823281, 0, 0.491228074, 0)
+				onof.Size = UDim2.new(0, 56, 0, 28)
+				onof.Font = Enum.Font.SourceSans
+				onof.Text = "fly"
+				onof.TextColor3 = Color3.fromRGB(0, 0, 0)
+				onof.TextSize = 14.000
+				TextLabel.Parent = Frame
+				TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
+				TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
+				TextLabel.Size = UDim2.new(0, 100, 0, 28)
+				TextLabel.Font = Enum.Font.SourceSans
+				TextLabel.Text = "Fly GUI V3"
+				TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+				TextLabel.TextScaled = true
+				TextLabel.TextSize = 14.000
+				TextLabel.TextWrapped = true
+				plus.Name = "plus"
+				plus.Parent = Frame
+				plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
+				plus.Position = UDim2.new(0.231578946, 0, 0, 0)
+				plus.Size = UDim2.new(0, 45, 0, 28)
+				plus.Font = Enum.Font.SourceSans
+				plus.Text = "+"
+				plus.TextColor3 = Color3.fromRGB(0, 0, 0)
+				plus.TextScaled = true
+				plus.TextSize = 14.000
+				plus.TextWrapped = true
+				speed.Name = "speed"
+				speed.Parent = Frame
+				speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+				speed.Position = UDim2.new(0.468421042, 0, 0.491228074, 0)
+				speed.Size = UDim2.new(0, 44, 0, 28)
+				speed.Font = Enum.Font.SourceSans
+				speed.Text = "1"
+				speed.TextColor3 = Color3.fromRGB(0, 0, 0)
+				speed.TextScaled = true
+				speed.TextSize = 14.000
+				speed.TextWrapped = true
+				mine.Name = "mine"
+				mine.Parent = Frame
+				mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
+				mine.Position = UDim2.new(0.231578946, 0, 0.491228074, 0)
+				mine.Size = UDim2.new(0, 45, 0, 29)
+				mine.Font = Enum.Font.SourceSans
+				mine.Text = "-"
+				mine.TextColor3 = Color3.fromRGB(0, 0, 0)
+				mine.TextScaled = true
+				mine.TextSize = 14.000
+				mine.TextWrapped = true
+				closebutton.Name = "Close"
+				closebutton.Parent = main.Frame
+				closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
+				closebutton.Font = "SourceSans"
+				closebutton.Size = UDim2.new(0, 45, 0, 28)
+				closebutton.Text = "X"
+				closebutton.TextSize = 30
+				closebutton.Position =  UDim2.new(0, 0, -1, 27)
+				mini.Name = "minimize"
+				mini.Parent = main.Frame
+				mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+				mini.Font = "SourceSans"
+				mini.Size = UDim2.new(0, 45, 0, 28)
+				mini.Text = "T"
+				mini.TextSize = 30
+				mini.Position = UDim2.new(0, 44, -1, 27)
+				mini2.Name = "minimize2"
+				mini2.Parent = main.Frame
+				mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+				mini2.Font = "SourceSans"
+				mini2.Size = UDim2.new(0, 45, 0, 28)
+				mini2.Text = "T"
+				mini2.TextSize = 30
+				mini2.Position = UDim2.new(0, 44, -1, 57)
+				mini2.Visible = false
+				local speeds = 1
+				local nowe = false
+				local tpwalking = false
+				local speaker = game:GetService("Players").LocalPlayer
+				Frame.Active = true
+				Frame.Draggable = true
+				game:GetService("StarterGui"):SetCore("SendNotification", { 
+					Title = "Fly GUI V3",
+					Text = "Injection succeeded",
+					Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150",
+					Duration = 5
+				})
+				closebutton.MouseButton1Click:Connect(function()
+					main:Destroy()
+					flyGuiCreated = false
+				end)
+				mini.MouseButton1Click:Connect(function()
+					up.Visible = false
+					down.Visible = false
+					onof.Visible = false
+					plus.Visible = false
+					speed.Visible = false
+					mine.Visible = false
+					mini.Visible = false
+					mini2.Visible = true
+					main.Frame.BackgroundTransparency = 1
+					closebutton.Position = UDim2.new(0, 0, -1, 57)
+				end)
+				mini2.MouseButton1Click:Connect(function()
+					up.Visible = true
+					down.Visible = true
+					onof.Visible = true
+					plus.Visible = true
+					speed.Visible = true
+					mine.Visible = true
+					mini.Visible = true
+					mini2.Visible = false
+					main.Frame.BackgroundTransparency = 0 
+					closebutton.Position = UDim2.new(0, 0, -1, 27)
+				end)
+				speaker.CharacterAdded:Connect(function()
+					flyGuiCreated = false
+				end)
+
+				local tis
+				up.MouseButton1Down:Connect(function()
+					tis = up.MouseEnter:Connect(function()
+						while tis do
+							task.wait()
+							game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,1,0)
+						end
+					end)
+				end)
+				up.MouseLeave:Connect(function()
+					if tis then tis:Disconnect() tis = nil end
+				end)
+
+				local dis
+				down.MouseButton1Down:Connect(function()
+					dis = down.MouseEnter:Connect(function()
+						while dis do
+							task.wait()
+							game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-1,0)
+						end
+					end)
+				end)
+				down.MouseLeave:Connect(function()
+					if dis then dis:Disconnect() dis = nil end
+				end)
+
+				game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(char)
+					task.wait(0.7)
+					game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
+					game.Players.LocalPlayer.Character.Animate.Disabled = false
+				end)
+
+				plus.MouseButton1Down:Connect(function()
+					speeds = speeds + 1
+					speed.Text = speeds
+					if nowe == true then
+						tpwalking = false
+						for i = 1, speeds do
+							task.spawn(function()
+								local hb = game:GetService("RunService").Heartbeat	
+								tpwalking = true
+								local chr = game.Players.LocalPlayer.Character
+								local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+								while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+									if hum.MoveDirection.Magnitude > 0 then
+										chr:TranslateBy(hum.MoveDirection)
+									end
+								end
+							end)
+						end
+					end
+				end)
+				mine.MouseButton1Down:Connect(function()
+					if speeds == 1 then
+						speed.Text = 'flyno1'
+						task.wait(1)
+						speed.Text = speeds
+					else
+						speeds = speeds - 1
+						speed.Text = speeds
+						if nowe == true then
+							tpwalking = false
+							for i = 1, speeds do
+								task.spawn(function()
+									local hb = game:GetService("RunService").Heartbeat	
+									tpwalking = true
+									local chr = game.Players.LocalPlayer.Character
+									local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+									while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+										if hum.MoveDirection.Magnitude > 0 then
+											chr:TranslateBy(hum.MoveDirection)
+										end
+									end
+								end)
+							end
+						end
+					end
+				end)
+
+				onof.MouseButton1Down:Connect(function()
+					if nowe == true then
+						nowe = false
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,true)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,true)
+						speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+					else 
+						nowe = true
+						for i = 1, speeds do
+							task.spawn(function()
+								local hb = game:GetService("RunService").Heartbeat	
+								tpwalking = true
+								local chr = game.Players.LocalPlayer.Character
+								local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+								while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+									if hum.MoveDirection.Magnitude > 0 then
+										chr:TranslateBy(hum.MoveDirection)
+									end
+								end
+							end)
+						end
+						game.Players.LocalPlayer.Character.Animate.Disabled = true
+						local Char = game.Players.LocalPlayer.Character
+						local Hum = Char:FindFirstChildOfClass("Humanoid") or Char:FindFirstChildOfClass("AnimationController")
+						for i,v in next, Hum:GetPlayingAnimationTracks() do
+							v:AdjustSpeed(0)
+						end
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
+						speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+						speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+					end
+				end)
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 自杀按钮
+	PlayerTab:Button({
+		Title = "自杀",
+		Color = Red,
+		Justify = "Center",
+		Icon = "skull",
+		Callback = function()
+			pcall(function()
+				local character = game.Players.LocalPlayer.Character
+				if character and character:FindFirstChildOfClass("Humanoid") then
+					character.Humanoid.Health = 0
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 重置角色
+	PlayerTab:Button({
+		Title = "重置角色",
+		Color = BlueMain,
+		Justify = "Center",
+		Icon = "refresh",
+		Callback = function()
+			pcall(function() game.Players.LocalPlayer:LoadCharacter() end)
+		end,
+	})
+	PlayerTab:Space()
+	-- 传送到鼠标位置
+	PlayerTab:Button({
+		Title = "传送到鼠标位置",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "crosshair",
+		Callback = function()
+			pcall(function()
+				local player = game.Players.LocalPlayer
+				local mouse = player:GetMouse()
+				if mouse then
+					local character = player.Character
+					if character and character:FindFirstChild("HumanoidRootPart") then
+						character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.X, mouse.Hit.Y + 5, mouse.Hit.Z)
+					end
+				end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	-- ==================== 分区2：视角与帧率 ====================
+	PlayerTab:Section({ Title = "视角与帧率", TextSize = 16 })
+	PlayerTab:Slider({
+		Title = "设置缩放距离",
+		Desc = "ZOOOOOM OUT!",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 128, Max = 200000, Default = 128 },
+		Callback = function(zoomDistance)
+			pcall(function()
+				game:GetService("Players").LocalPlayer.CameraMaxZoomDistance = zoomDistance
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Slider({
+		Title = "设置缩放焦距(正常70)",
+		Desc = "Sliderflag",
+		Step = 0.1,
+		Width = 200,
+		Value = { Min = 0.1, Max = 250, Default = 70 },
+		Callback = function(fieldOfView)
+			pcall(function()
+				game.Workspace.CurrentCamera.FieldOfView = fieldOfView
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Slider({
+		Title = "设置帧率FPS",
+		Desc = "Sliderflag",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 300, Max = 100000, Default = 300 },
+		Callback = function(fps)
+			pcall(function() setfpscap(fps) end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Space()
+	-- ==================== 分区3：玩家修改 ====================
+	PlayerTab:Section({ Title = "玩家修改", TextSize = 16 })
+	PlayerTab:Slider({
+		Title = "设置玩家头部大小",
+		Desc = "Head",
+		Step = 0.1,
+		Width = 200,
+		Value = { Min = 0, Max = 1000, Default = 1 },
+		Callback = function(headSize)
+			for _, conn in pairs(headSizeConnections) do conn:Disconnect() end
+			headSizeConnections = {}
+			local function applyHeadSize(player)
+				pcall(function()
+					if player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character.Humanoid.Health > 0 then
+						player.Character.Head.Massless = true
+						player.Character.Head.Size = Vector3.new(headSize, headSize, headSize)
+					end
+				end)
+			end
+			for _, player in pairs(Players:GetPlayers()) do
+				applyHeadSize(player)
+				local conn = player.CharacterAdded:Connect(function() applyHeadSize(player) end)
+				table.insert(headSizeConnections, conn)
+			end
+			local playerAddedConn
+			playerAddedConn = Players.PlayerAdded:Connect(function(newPlayer)
+				applyHeadSize(newPlayer)
+				local charConn = newPlayer.CharacterAdded:Connect(function() applyHeadSize(newPlayer) end)
+				table.insert(headSizeConnections, charConn)
+			end)
+			table.insert(headSizeConnections, playerAddedConn)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Space()
+	-- ==================== 分区4：重力与移动 ====================
+	PlayerTab:Section({ Title = "世界与移动", TextSize = 16 })
+	PlayerTab:Input({
+		Title = "设置重力",
+		Desc = "Gravity",
+		Value = "",
+		Type = "Input",
+		Placeholder = "输入重力值",
+		Callback = function(gravity)
+			local num = tonumber(gravity)
+			if not num then return end
+			currentGravity = num
+			if not gravityLoopRunning then
+				gravityLoopRunning = true
+				task.spawn(function()
+					while gravityLoopRunning do
+						pcall(function() game.Workspace.Gravity = currentGravity end)
+						task.wait(0.5)
+					end
+				end)
+			end
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Input({
+		Title = "设置快速跑步",
+		Desc = "run",
+		Value = "",
+		Type = "Input",
+		Placeholder = "输入速度值",
+		Callback = function(speedValue)
+			pcall(function()
+				speedValue = tonumber(speedValue)
+				if speedValue then Speed = speedValue end
+			end)
+		end,
+	})
+	PlayerTab:Space()
+	PlayerTab:Toggle({
+		Title = "开启快速跑步(开/关)",
+		Desc = "switch",
+		Value = false,
+		Callback = function(enabled)
+			pcall(function()
+				if enabled then
+					sudu = game:GetService("RunService").Heartbeat:Connect(function()
+						local char = game:GetService("Players").LocalPlayer.Character
+						local hum = char and char:FindFirstChildWhichIsA("Humanoid")
+						if char and hum and hum.Parent and hum.MoveDirection.Magnitude > 0 then
+							char:TranslateBy(hum.MoveDirection * Speed / 0.5)
+						end
+					end)
+				elseif sudu then
+					sudu:Disconnect()
+					sudu = nil
+				end
+			end)
+		end,
+	})
+end
+
+-- ============== 通用 ==============
+do
+	local GeneralTab = Window:Tab({
+		Title = "通用",
+		Icon = "filetext",
+		IconColor = Color3.fromHex("#1A5BBF"),
+		IconShape = "Square",
+		Border = true,
+	})
+	
+-- 声明本选项卡内所需的变量
+local RunService = game:GetService("RunService")
+local camLoop = nil
+local fullBrightConn = nil
+local rotateSpeed = 10
+local TargetName = "Guest"
+local adsorbTask = nil   -- ← 添加
+local rotateConn = nil   -- ← 添加
+	
+	-- ====== 相机广角 ======
+	GeneralTab:Section({ Title = "相机 & 视觉", TextSize = 16 })
+	GeneralTab:Slider({
+		Title = "相机广角(视野FOV)",
+		Step = 1,
+		Value = { Min = 20, Max = 120, Default = 70 },
+		Callback = function(val)
+			_G.TargetFOV = val
+		end
+	})
+	GeneralTab:Toggle({
+		Title = "启用自定义广角",
+		Value = false,
+		Callback = function(enabled)
+			if enabled then
+				camLoop = RunService.RenderStepped:Connect(function()
+					local cam = workspace.CurrentCamera
+					if cam then
+						cam.FieldOfView = _G.TargetFOV or 70
+					end
+				end)
+			else
+				if camLoop then
+					camLoop:Disconnect()
+					camLoop = nil
+				end
+				workspace.CurrentCamera.FieldOfView = 70
+			end
+		end
+	})
+	GeneralTab:Space()
+	
+	-- FullBright
+	GeneralTab:Toggle({
+		Title = "FullBright全局高亮",
+		Value = false,
+		Callback = function(enabled)
+			local Lighting = game:GetService("Lighting")
+			if enabled then
+				fullBrightConn = RunService.Heartbeat:Connect(function()
+					Lighting.Ambient = Color3.new(1,1,1)
+					Lighting.Brightness = 3
+					Lighting.OutdoorAmbient = Color3.new(1,1,1)
+				end)
+			else
+				if fullBrightConn then
+					fullBrightConn:Disconnect()
+					fullBrightConn = nil
+				end
+				Lighting.Ambient = Color3.new(0.25,0.25,0.25)
+				Lighting.Brightness = 1
+				Lighting.OutdoorAmbient = Color3.new(0.4,0.4,0.4)
+			end
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 点击传送
+	GeneralTab:Toggle({
+		Title = "点击传送",
+		Value = false,
+		Callback = function(enabled)
+			local Players = game:GetService("Players")
+			local LocalPlayer = Players.LocalPlayer
+			local mouse = LocalPlayer:GetMouse()
+			if enabled then
+				_G.ClickTpConn = mouse.Button1Down:Connect(function()
+					local char = LocalPlayer.Character
+					if not char then return end
+					local root = char:FindFirstChild("HumanoidRootPart")
+					if not root then return end
+					root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0,2,0))
+				end)
+			else
+				if _G.ClickTpConn then
+					_G.ClickTpConn:Disconnect()
+					_G.ClickTpConn = nil
+				end
+			end
+		end,
+	})
+	GeneralTab:Space()
+	
+	-- ====== 玩家透视ESP ======
+	GeneralTab:Toggle({
+		Title = "玩家透视ESP",
+		Value = false,
+		Callback = function(enabled)
+			local Players = game:GetService("Players")
+			local lp = Players.LocalPlayer
+			local connections = {}
+			local adornments = {}
+			if enabled then
+				local function createEsp(plr)
+					if plr == lp then return end
+					local function onChar(char)
+						task.wait()
+						local root = char:WaitForChild("HumanoidRootPart",8)
+						local head = char:WaitForChild("Head",8)
+						local box = Instance.new("BoxHandleAdornment")
+						box.Size = Vector3.new(2,5,1)
+						box.AlwaysOnTop = true
+						box.Color3 = Color3.new(1,0,0)
+						box.Transparency = 0.5
+						box.Adornee = root
+						box.Parent = char
+						table.insert(adornments, box)
+						local bill = Instance.new("BillboardGui")
+						bill.AlwaysOnTop = true
+						bill.Size = UDim2.new(4,0,1.5,0)
+						bill.StudsOffset = Vector3.new(0,3,0)
+						bill.Parent = head
+						table.insert(adornments, bill)
+						local label = Instance.new("TextLabel")
+						label.BackgroundTransparency = 1
+						label.Size = UDim2.new(1,0,1,0)
+						label.Text = plr.Name
+						label.TextColor3 = Color3.new(1,0,0)
+						label.Font = Enum.Font.SourceSansBold
+						label.TextSize = 18
+						label.Parent = bill
+						table.insert(adornments, label)
+					end
+					if plr.Character then
+						task.spawn(onChar, plr.Character)
+					end
+					table.insert(connections, plr.CharacterAdded:Connect(onChar))
+				end
+				for _,p in Players:GetPlayers() do
+					task.spawn(createEsp,p)
+				end
+				table.insert(connections, Players.PlayerAdded:Connect(createEsp))
+			else
+				for _,con in connections do
+					con:Disconnect()
+				end
+				for _,obj in adornments do
+					obj:Destroy()
+				end
+				table.clear(connections)
+				table.clear(adornments)
+			end
+		end,
+	})
+	GeneralTab:Space()
+	
+	-- ====== 吸附全部玩家 ======
+	GeneralTab:Toggle({
+    Title = "吸附全部玩家",
+    Value = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        if enabled then
+            adsorbTask = task.spawn(function()
+                while task.wait(0.05) do
+                    if not LocalPlayer.Character then continue end
+                    local MyRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not MyRoot then continue end
+                    for _,plr in Players:GetPlayers() do
+                        if plr == LocalPlayer then continue end
+                        local char = plr.Character
+                        if not char then continue end
+                        local root = char:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            root.CFrame = root.CFrame:Lerp(MyRoot.CFrame, 0.12)
+                        end
+                    end
+                end
+            end)
+        else
+            if adsorbTask then
+                task.cancel(adsorbTask)
+                adsorbTask = nil
+            end
+        end
+    end,
+})
+	GeneralTab:Space()
+	
+	-- ====== 自身旋转 ======
+	GeneralTab:Section({ Title = "自身旋转", TextSize = 16 })
+	GeneralTab:Input({
+		Title = "旋转速度",
+		Placeholder = "输入旋转数值",
+		Callback = function(input)
+			rotateSpeed = tonumber(input) or 10
+		end
+	})
+	GeneralTab:Toggle({
+    Title = "自身旋转",
+    Value = false,
+    Callback = function(enabled)
+        if enabled then
+            rotateConn = RunService.RenderStepped:Connect(function()
+                local lp = game.Players.LocalPlayer
+                if not lp.Character then return end
+                local root = lp.Character:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+                root.CFrame *= CFrame.Angles(0, math.rad(rotateSpeed), 0)
+            end)
+        else
+            if rotateConn then
+                rotateConn:Disconnect()
+                rotateConn = nil
+            end
+        end
+    end,
+})
+	GeneralTab:Space()
+	
+	-- ====== 各种功能按钮（来自原 Tabs.NewTab / FeZone / LightTab / Music / AimTab 等） ======
+	GeneralTab:Section({ Title = "功能按钮", TextSize = 16 })
+	
+	-- 隐身
+	GeneralTab:Button({
+		Title = "隐身",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Invisible%20Gui'))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- fly v3
+	GeneralTab:Button({
+		Title = "fly v3",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/UVAj0uWu"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- fe 变身整合
+	GeneralTab:Button({
+		Title = "fe 变身整合",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Robloxexploiter691/Genesisloader/main/Script.lua"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 旋转甩飞
+	GeneralTab:Button({
+		Title = "旋转甩飞",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			local Players = game:GetService("Players")
+			local localPlr = game.Players.LocalPlayer
+			if not localPlr.Character then return end
+			local localRoot = localPlr.Character:FindFirstChild("HumanoidRootPart")
+			local target = Players:FindFirstChild(TargetName)
+			if not target or not target.Character then return end
+			local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+			if not targetRoot or not localRoot then return end
+			task.spawn(function()
+				for i = 1,120 do
+					localRoot.CFrame = targetRoot.CFrame * CFrame.Angles(0,math.rad(i*18),0)
+					task.wait(0)
+				end
+			end)
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 甩飞
+	GeneralTab:Button({
+		Title = "甩飞",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/lolssqa/rspy-but-back/refs/heads/main/Lu_hub.(1)"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 玩家之间无碰撞
+	GeneralTab:Button({
+		Title = "玩家之间无碰撞",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			local PhysicsService = game:GetService("PhysicsService")
+			local lp = game.Players.LocalPlayer
+			PhysicsService:CreateCollisionGroup("SelfOnly")
+			PhysicsService:CollisionGroupSetCollidable("SelfOnly","Default",true)
+			PhysicsService:CollisionGroupSetCollidable("SelfOnly","Players",false)
+			local function ApplyCollision(character)
+				for _,v in character:GetDescendants() do
+					if v:IsA("BasePart") then
+						PhysicsService:SetPartCollisionGroup(v,"SelfOnly")
+					end
+				end
+			end
+			if lp.Character then
+				ApplyCollision(lp.Character)
+			end
+			lp.CharacterAdded:Connect(ApplyCollision)
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 键盘
+	GeneralTab:Button({
+		Title = "键盘",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- iy (无限产量)
+	GeneralTab:Button({
+		Title = "iy",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 跑墙
+	GeneralTab:Button({
+		Title = "跑墙",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 替身
+	GeneralTab:Button({
+		Title = "替身",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://raw.githubusercontent.com/SkrillexMe/SkrillexLoader/main/SkrillexLoadMain')))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 光影
+	GeneralTab:Button({
+		Title = "光影",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/MZEEN2424/Graphics/main/Graphics.xml"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 变蛇
+	GeneralTab:Button({
+		Title = "变蛇",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://pastefy.ga/tWBTcE4R/raw'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 让别人控制自己
+	GeneralTab:Button({
+		Title = "让别人控制自己",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://pastefy.ga/a7RTi4un/raw'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 无敌
+	GeneralTab:Button({
+		Title = "无敌",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			local lp = game:GetService "Players".LocalPlayer
+			if lp.Character:FindFirstChild "Head" then
+				local char = lp.Character
+				char.Archivable = true
+				local new = char:Clone()
+				new.Parent = workspace
+				lp.Character = new
+				wait(2)
+				local oldhum = char:FindFirstChildWhichIsA "Humanoid"
+				local newhum = oldhum:Clone()
+				newhum.Parent = char
+				newhum.RequiresNeck = false
+				oldhum.Parent = nil
+				wait(2)
+				lp.Character = char
+				new:Destroy()
+				wait(1)
+				newhum:GetPropertyChangedSignal("Health"):Connect(function()
+					if newhum.Health <= 0 then
+						oldhum.Parent = lp.Character
+						wait(1)
+						oldhum:Destroy()
+					end
+				end)
+				workspace.CurrentCamera.CameraSubject = char
+				if char:FindFirstChild "Animate" then
+					char.Animate.Disabled = true
+					wait(.1)
+					char.Animate.Disabled = false
+				end
+				lp.Character:FindFirstChild "Head":Destroy()
+			end
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 防掉线
+	GeneralTab:Button({
+		Title = "防掉线",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			print("Anti Afk On")
+			local vu = game:GetService("VirtualUser")
+			game:GetService("Players").LocalPlayer.Idled:connect(function()
+				vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+				wait(1)
+				vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+			end)
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 无敌2
+	GeneralTab:Button({
+		Title = "无敌2",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet('https://pastebin.com/raw/H3RLCWWZ'))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 伪名说话（空）
+	GeneralTab:Button({
+		Title = "伪名说话",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			-- 功能待实现
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 跟踪玩儿家（空）
+	GeneralTab:Button({
+		Title = "跟踪玩儿家",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			-- 功能待实现
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 踏空行走
+	GeneralTab:Button({
+		Title = "踏空行走",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Float'))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 飞车
+	GeneralTab:Button({
+		Title = "飞车",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/G3GnBCyC", true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 隐身按e
+	GeneralTab:Button({
+		Title = "隐身按e",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet('https://pastebin.com/raw/nwGEvkez'))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 开启穿墙
+	GeneralTab:Button({
+		Title = "开启穿墙",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			local Players = game:GetService("Players")
+			local lp = Players.LocalPlayer
+			if not lp.Character then return end
+			for _,part in lp.Character:GetDescendants() do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+				end
+			end
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 无限跳
+	GeneralTab:Button({
+		Title = "无限跳",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/V5PQy3y0", true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 噶了
+	GeneralTab:Button({
+		Title = "噶了",
+		Color = Red,
+		Justify = "Center",
+		Callback = function()
+			game.Players.LocalPlayer.Character.Humanoid.Health=0
+		end
+	})
+	GeneralTab:Space()
+	
+	-- fe点击传送
+	GeneralTab:Button({
+		Title = "fe点击传送",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			local mouse = game.Players.LocalPlayer:GetMouse()
+			local tool = Instance.new("Tool")
+			tool.RequiresHandle = false
+			tool.Name = "[FE]点击传送"
+			tool.Activated:connect(function()
+				local pos = mouse.Hit+Vector3.new(0,2.5,0)
+				pos = CFrame.new(pos.X,pos.Y,pos.Z)
+				game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+			end)
+			tool.Parent = game.Players.LocalPlayer.Backpack
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 上帝模式(免疫)
+	GeneralTab:Button({
+		Title = "上帝模式(免疫)",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/zephyr10101/ignore-touchinterests/main/main",true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 游戏通行证(跑酷游戏)
+	GeneralTab:Button({
+		Title = "游戏通行证(跑酷游戏)",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			for _,v in pairs(game:GetDescendants()) do
+				if v.ClassName == "RemoteEvent" then
+					if v.Parent.Name == "WeaponsRemotes" or v.Parent.Name == "VipRemotes" or v.Parent.Name == "Remotes" then
+						v:FireServer()
+					end
+				end
+			end
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 模仿者脚本
+	GeneralTab:Button({
+		Title = "模仿者脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/ttjy9808/THEMIMICNEWMOBILEUINOTBETA/main/README.md"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 画质脚本
+	GeneralTab:Button({
+		Title = "画质脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://pastefy.app/xXkUxA0P/raw'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- FE动作
+	GeneralTab:Button({
+		Title = "FE动作",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://pastebin.com/raw/1p6xnBNf'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 走路甩人
+	GeneralTab:Button({
+		Title = "走路甩人",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe./main/Fling%20GUI"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- NA管理员
+	GeneralTab:Button({
+		Title = "NA管理员",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 电脑键盘
+	GeneralTab:Button({
+		Title = "电脑键盘",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/xSsDaMg2"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- FE幽灵中心
+	GeneralTab:Button({
+		Title = "FE幽灵中心",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/GhostHub'))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 声音播放器
+	GeneralTab:Button({
+		Title = "声音播放器",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://rawscripts.net/raw/Anime-Expeditions-TIME-CHAMBER-OP-Macro-Auto-Challenge-Auto-Play-Auto-Raid-Auto-Shop-more-243513"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 铁拳打飞人
+	GeneralTab:Button({
+		Title = "铁拳打飞人",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 蜘蛛侠爬墙
+	GeneralTab:Button({
+		Title = "蜘蛛侠爬墙(按C爬墙)",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet(('https://pastebin.com/raw/2X0hKUgq'),true))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 回满血
+	GeneralTab:Button({
+		Title = "回满血",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			game.Players.LocalPlayer.Character.Humanoid.Health=10000
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 后门
+	GeneralTab:Button({
+		Title = "后门",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield-6.4.1-PlayGround-LALOL-HUB-239074"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 黑客脚本
+	GeneralTab:Button({
+		Title = "黑客脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Team-c00lkidd-4-f3x-op-218003"))()
+		end
+	})
+	GeneralTab:Space()
+	
+	-- 子追
+	GeneralTab:Button({
+		Title = "子追",
+		Color = BlueLight,
+		Justify = "Center",
+		Callback = function()
+			loadstring(game:HttpGet("https://pastebin.com/raw/1AJ69eRG"))()
+		end
+	})
+	
+end
+
+-- ============== 脚本中心 ==============
+do
+	local ScriptHubTab = Window:Tab({
+		Title = "脚本中心",
+		Icon = "code",
+		IconColor = BlueLight,
+		IconShape = "Square",
+		Border = true,
+	})
+	ScriptHubTab:Section({Title="黑白脚本",TextSize=16})
+	ScriptHubTab:Button({
+		Title = "加载黑白脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "paper-plane",
+		Callback = function()
+			pcall(function()
+				loadstring(game:HttpGet('https://raw.githubusercontent.com/tfcygvunbind/Apple/main/黑白脚本加载器'))()
+				WindUI:Notify({Title="脚本中心",Content="黑白脚本加载成功",Duration=3})
+			end)
+		end,
+	})
+    ScriptHubTab:Section({Title="皮脚本",TextSize=16})
+	ScriptHubTab:Button({
+		Title = "加载皮脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "paper-plane",
+		Callback = function()
+			pcall(function()
+				getgenv().XiaoPi="皮脚本QQ群1002100032" loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
+				WindUI:Notify({Title="脚本中心",Content="皮脚本加载成功",Duration=3})
+			end)
+		end,
+	})
+    ScriptHubTab:Section({Title="叶脚本",TextSize=16})
+	ScriptHubTab:Button({
+		Title = "加载叶脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "paper-plane",
+		Callback = function()
+			pcall(function()
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/roblox-ye/QQ515966991/refs/heads/main/ROBLOX-YE-SCRIPT-XIAOYE.lua"))()
+				WindUI:Notify({Title="脚本中心",Content="叶脚本加载成功",Duration=3})
+			end)
+		end,
+	})
+    ScriptHubTab:Section({Title="落叶脚本", TextSize=16})   -- 可选，用于分组
+ScriptHubTab:Button({
+    Title = "加载落叶脚本",
+    Color = BlueLight,   -- 或 BlueMain, Red 等预设颜色
+    Justify = "Center",
+    Icon = "paper-plane",  -- 可选图标
+    Callback = function()
+    pcall(function()
+        getgenv().LS = "落叶中心"  -- 若有需要
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/krlpl/Deciduous-center-LS/main/%E8%90%BD%E5%8F%B6%E4%B8%AD%E5%BF%83%E6%B7%B7%E6%B7%86.txt"))()
+        WindUI:Notify({Title="脚本中心", Content="落叶脚本加载成功", Duration=3})
+    end)
+end
+})
+-- ============== 设置【之前弄丢的】 ==============
+do
+	local SettingsTab = Window:Tab({
+		Title = "设置",
+		Icon = "settings",
+		IconColor = BlueDark,
+		IconShape = "Square",
+		Border = true,
+	})
+	SettingsTab:Section({ Title = "界面外观", TextSize = 16 })
+	SettingsTab:Dropdown({
+		Title = "主题切换",
+		Values = { "Dark", "Light", "Sky", "Indigo", "Rose", "Plant", "Mellowsi", "Midnight", "Emerald", "Rainbow" },
+		Value = "Dark",
+		Callback = function(theme) WindUI:SetTheme(theme) end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Toggle({
+		Title = "窗口半透明",
+		Value = false,
+		Callback = function(state) Window:ToggleTransparency(state) end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Slider({
+		Title = "界面缩放",
+		Step = 0.05,
+		Width = 200,
+		Value = { Min = 0.5, Max = 1.5, Default = 1 },
+		Callback = function(value)
+			Window:SetUIScale(value)
+			WindUI:Notify({ Title = "界面缩放", Content = string.format("倍率：%.2f", value), Duration = 1.2 })
+		end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Keybind({
+		Title = "开关界面按键",
+		Value = "RightShift",
+		Callback = function(key)
+			local kc = Enum.KeyCode[key]
+			if kc then Window:SetToggleKey(kc) end
+		end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Slider({
+		Title = "背景透明度",
+		Step = 0.05,
+		Width = 200,
+		Value = { Min = 0, Max = 1, Default = 0.45 },
+		Callback = function(value)
+			pcall(function()
+				if Window.SetBackgroundTransparency then Window:SetBackgroundTransparency(value) end
+			end)
+		end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Section({ Title = "脚本控制", TextSize = 16 })
+	SettingsTab:Button({
+		Title = "关闭窗口（保留脚本后台）",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "",
+		Callback = function() if Window and Window.Destroy then Window:Destroy() end end,
+	})
+	SettingsTab:Space()
+	SettingsTab:Button({
+		Title = "彻底退出脚本",
+		Color = Red,
+		Justify = "Center",
+		Icon = "",
+		Callback = function() ExitScript() end,
+	})
+end
+
+-- ============== 组件演示【之前弄丢的】 ==============
+do
+	local DemoTab = Window:Tab({
+		Title = "组件演示",
+		Icon = "sparkles",
+		IconColor = BlueMain,
+		IconShape = "Square",
+		Border = true,
+	})
+	DemoTab:Section({ Title = "按钮 / 开关 / 滑条", TextSize = 16 })
+	DemoTab:Button({
+		Title = "点我试试",
+		Color = BlueMain,
+		Justify = "Center",
+		Icon = "mouse-pointer-click",
+		IconAlign = "Left",
+		Callback = function() WindUI:Notify({ Title = "按钮", Content = "按钮点击成功", Duration = 2 }) end,
+	})
+	DemoTab:Space()
+	DemoTab:Toggle({ Title = "开关（Toggle）", Value = false, Callback = function(v) print("[妥协脚本] Toggle:", v) end })
+	DemoTab:Space()
+	DemoTab:Toggle({ Title = "复选（Checkbox）", Type = "Checkbox", Value = true, Callback = function(v) print("[妥协脚本] Checkbox:", v) end })
+	DemoTab:Space()
+	DemoTab:Slider({
+		Title = "滑条（Slider）",
+		Step = 1,
+		Width = 200,
+		Value = { Min = 0, Max = 100, Default = 50 },
+		Callback = function(value) print("[妥协脚本] Slider:", value) end,
+	})
+	DemoTab:Space()
+	DemoTab:Section({ Title = "下拉 / 输入 / 取色", TextSize = 16 })
+	DemoTab:Dropdown({
+		Title = "下拉（Dropdown）",
+		Values = { "选项A", "选项B", "选项C" },
+		Value = "选项A",
+		Callback = function(option) print("[妥协脚本] Dropdown:", option) end,
+	})
+	DemoTab:Space()
+	DemoTab:Input({
+		Title = "输入框（Input）",
+		Value = "",
+		Type = "Input",
+		Placeholder = "在这里输入...",
+		Callback = function(input) print("[妥协脚本] Input:", input) end,
+	})
+	DemoTab:Space()
+	DemoTab:Colorpicker({
+		Title = "取色器（Colorpicker）",
+		Default = Color3.fromHex("#257AF7"),
+		Callback = function(color) print("[妥协脚本] Color:", tostring(color)) end,
+	})
+end
+
+-- ============== 关于==============
+do
+	local AboutTab = Window:Tab({
+		Title = "关于",
+		Icon = "solar:info-square-bold",
+		IconColor = Grey,
+		IconShape = "Square",
+		Border = true,
+	})
+	AboutTab:Section({ Title = "妥协脚本 · 完整版", TextSize = 20, FontWeight = Enum.FontWeight.SemiBold })
+	AboutTab:Paragraph({
+		Title = "关于本脚本",
+		Desc = "UI 库：WindUI v1.0.1\n修复UDim2语法报错，图片改用原生ImageLabel\n背景使用rbxassetid内部资源",
+	})
+	AboutTab:Space()
+	AboutTab:Button({
+		Title = "复制版本信息",
+		Color = BlueMain,
+		Justify = "Center",
+		Icon = "copy",
+		IconAlign = "Left",
+		Callback = function()
+			if setclipboard then
+				setclipboard("妥协脚本 · 完整版 | WindUI " .. tostring(WindUI.Version or "1.0.1"))
+				WindUI:Notify({ Title = "已复制", Content = "版本信息已复制到剪贴板", Duration = 3 })
+			else
+				WindUI:Notify({ Title = "版本", Content = "妥协脚本 · 完整版 | WindUI " .. tostring(WindUI.Version or "1.0.1"), Duration = 4 })
+			end
+		end,
+	})
+end
+
+	pcall(function() Window:SelectTab(1) end)
+	WindUI:Notify({ Title = "妥协脚本", Content = "加载完成，所有功能正常", Icon = "solar:check-circle-bold", Duration = 4 })
+end)
+
+if not buildOK then
+	warn("[妥协脚本] UI构建失败: " .. tostring(buildErr))
+	pcall(function()
+		WindUI:Notify({ Title = "妥协脚本", Content = "UI构建失败:"..tostring(buildErr), Duration = 8 })
+	end)
+end

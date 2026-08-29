@@ -1,0 +1,2907 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/KingScriptAE/No-sirve-nada./refs/heads/main/main.lua"))()
+local FLOW_SPEED = 5.5
+local BORDER_THICKNESS = 1.7
+local FIXED_FONT = Enum.Font.SourceSansBold
+local WhiteFlowTheme = ColorSequence.new({
+	ColorSequenceKeypoint.new(0.00, Color3.fromHex("1A0101")),
+	ColorSequenceKeypoint.new(0.25, Color3.fromHex("5A0A0A")),
+	ColorSequenceKeypoint.new(0.45, Color3.fromHex("C80000")),
+	ColorSequenceKeypoint.new(0.55, Color3.fromHex("FFFFFF")),
+	ColorSequenceKeypoint.new(0.75, Color3.fromHex("B02B2B")),
+	ColorSequenceKeypoint.new(1.00, Color3.fromHex("1F0303")),
+})
+local borderAnimation
+local borderInitialized = false
+
+function gradient(text, startColor, endColor)
+    local result = ""
+    local chars = {}
+    for uchar in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+        table.insert(chars, uchar)
+    end
+    local length = #chars
+    for i = 1, length do
+        local t = (i - 1) / math.max(length - 1, 1)
+        local r = startColor.R + (endColor.R - startColor.R) * t
+        local g = startColor.G + (endColor.G - startColor.G) * t
+        local b = startColor.B + (endColor.B - startColor.B) * t
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
+            math.floor(r * 255), math.floor(g * 255), math.floor(b * 255), chars[i])
+    end
+    return result
+end
+
+local function StartFontEnforcer()
+    if not Window or not Window.UIElements then 
+        task.wait(1)
+        if not Window or not Window.UIElements then return end
+    end  
+    local MainFrame = Window.UIElements.Main
+    local function setFont(instance)
+        if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
+            pcall(function() 
+                instance.Font = FIXED_FONT 
+                instance.RichText = true
+            end)
+        end
+    end
+    for _, child in ipairs(MainFrame:GetDescendants()) do
+        setFont(child)
+    end
+    MainFrame.DescendantAdded:Connect(function(child)
+        setFont(child)
+    end)
+end
+local function createBorder(window)
+    if not window or not window.UIElements then
+        task.wait(1)
+        if not window or not window.UIElements then return nil end
+    end
+    local mainFrame = window.UIElements.Main
+    if not mainFrame then return nil end    
+    if mainFrame:FindFirstChild("FlowBorder") then return mainFrame.FlowBorder end    
+    if not mainFrame:FindFirstChildOfClass("UICorner") then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 16)
+        corner.Parent = mainFrame
+    end    
+    local stroke = Instance.new("UIStroke")
+    stroke.Name = "FlowBorder"
+    stroke.Thickness = BORDER_THICKNESS
+    stroke.Color = Color3.new(1, 1, 1)
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.LineJoinMode = Enum.LineJoinMode.Round
+    stroke.Enabled = true
+    stroke.Parent = mainFrame    
+    local gradient = Instance.new("UIGradient")
+    gradient.Name = "StreamEffect"
+    gradient.Color = WhiteFlowTheme
+    gradient.Rotation = 0
+    gradient.Parent = stroke    
+    return stroke
+end
+local function startBorderAnimation(window)
+    if not window or not window.UIElements then return nil end
+    local mainFrame = window.UIElements.Main
+    if not mainFrame then return nil end    
+    local stroke = mainFrame:FindFirstChild("FlowBorder")
+    if not stroke then return nil end    
+    local gradient = stroke:FindFirstChild("StreamEffect")
+    if not gradient then return nil end    
+    if borderAnimation then borderAnimation:Disconnect() borderAnimation = nil end    
+    local animation
+    animation = game:GetService("RunService").Heartbeat:Connect(function()
+        if not stroke or stroke.Parent == nil then
+            animation:Disconnect()
+            return
+        end
+        gradient.Rotation = (tick() * FLOW_SPEED * 20) % 360
+    end)
+    borderAnimation = animation
+    return animation
+end
+
+Window = WindUI:CreateWindow({
+    Title = gradient("鹿脚本｜v1", Color3.fromHex("#00FFAA"), Color3.fromHex("#00FFFF")), 
+    Author = gradient("作者:鹿言", Color3.fromHex("#00FFAA"), Color3.fromHex("#00AAFF")),
+    IconThemed = true,
+    Folder = "Atomic",
+   Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 120,
+    HideSearchBar = false,
+    ScrollBarEnabled = true,
+    Background = "rbxassetid://135461405245048",
+    BackgroundImageTransparency = 0.2,
+--    Background = "video:https://raw.githack.com/Potato5466794/LUAUmisc/refs/heads/main/Video_1770894406219_889.mp4",
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function()
+        end
+    },
+})
+
+Window:EditOpenButton({
+    Title = "67 鹿脚本 67",
+        Icon = "rbxassetid://135461405245048",
+        CornerRadius = UDim.new(1, 0),
+        StrokeThickness = 3,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Scale = 1,
+        Color = ColorSequence.new(
+            Color3.fromHex("#FFFFFF"),
+            Color3.fromHex("#FF9900")
+        ),
+})
+Window:Tag({
+    Title = "免费版",
+    Radius = 5,
+    Color = Color3.fromHex("#FFB347"),
+})
+
+Window:SetToggleKey(Enum.KeyCode.F, true)
+
+if not borderInitialized then
+    task.spawn(function()
+        task.wait(0.5) 
+        local stroke = createBorder(Window)
+        if stroke then
+            startBorderAnimation(Window)
+            borderInitialized = true
+        end
+        
+        StartFontEnforcer()
+    end)
+end
+
+local originalOpenFunction = Window.Open
+Window.Open = function(...)
+    local result = originalOpenFunction(...)
+    if borderInitialized and not borderAnimation then
+        task.wait(0.1)
+        startBorderAnimation(Window)
+    end
+    return result
+end
+
+Window:OnClose(function()
+    if borderAnimation then
+        borderAnimation:Disconnect()
+        borderAnimation = nil
+    end
+end)
+
+local Tabs = {
+    Info = Window:Tab({ Title = gradient("Info", Color3.fromHex("#FFFFFF"), Color3.fromHex("#FF9900")), Icon = "info"}),
+    y = Window:Tab({ Title = "玩家修改", Icon = "triangle" }),
+    NewTab = Window:Tab({ Title = "通用", Icon = "folder" }),
+    Fun = Window:Tab({ Title = "特殊脚本", Icon = "star" }),
+    Music = Window:Tab({ Title = "音乐区", Icon = "music" }),
+    FeZone = Window:Tab({ Title = "FE区", Icon = "warning" }),
+    AimTab = Window:Tab({ Title = "自瞄区", Icon = "crosshair" }),
+    LightTab = Window:Tab({ Title = "光影区", Icon = "sun" }),
+    BlackHoleTab = Window:Tab({ Title = "黑洞区", Icon = "circle" }),
+    ExploitTab = Window:Tab({ Title = "漏洞利用区", Icon = "bug" })
+}
+
+Tabs.Info:Section({Title = "脚本信息"})
+Tabs.Info:Paragraph({
+    Title = "公告:",
+    Desc = "该脚本又大路演子制作，目前版本v0.0.1，免费版 尊敬的用户欢迎使用鹿脚本脚本在持续更新加入qq群1032019653",
+    Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Section({Title = "脚本信息"})
+Tabs.Info:Paragraph({
+    Title = "公告:",
+    Desc = "该脚本又大路演子制作，目前版本v0.0.1，免费版 尊敬的用户欢迎使用鹿脚本脚本在持续更新加入qq群1032019653",
+    Image = "https://play-lh.googleusercontent.com/7cIIPlWm4m7AGqVpEsIfyL-HW4cQla4ucXnfalMft1TMIYQIlf2vqgmthlZgbNAQoaQ",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ClientId = game:GetService("HttpService"):GenerateGUID(false)
+local ServerId = game.JobId
+local AccountDays = math.floor(LocalPlayer.AccountAge)
+local AccountYear = tonumber(string.format("%.2f", AccountDays/365))
+
+Tabs.Info:Paragraph({
+    Title = "用户名:",
+    Desc = LocalPlayer.Name,
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "用户ID:",
+    Desc = tostring(LocalPlayer.UserId),
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "客户端ID:",
+    Desc = ClientId,
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "地区:",
+    Desc = "TW",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "语言:",
+    Desc = "zh-cn",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "账户年龄(天):",
+    Desc = tostring(AccountDays),
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "账户年龄(年):",
+    Desc = tostring(AccountYear),
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "注入器:",
+    Desc = "Delta",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "服务器ID:",
+    Desc = ServerId,
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "服务器位置ID:",
+    Desc = "97152974415088",
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+Tabs.Info:Paragraph({
+    Title = "服务器在线人数:",
+    Desc = tostring(#Players:GetPlayers()),
+    ImageSize = 20,
+    ThumbnailSize = 120
+})
+local hyw = Tabs.y:Section({
+    Title = "ee",
+--    Icon = "bird",
+})
+hyw:Button({
+    Title = "Button",
+    Callback = function() 
+    
+    end
+})
+Tabs.y:Toggle({
+    Title = "功能",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+    end,
+})
+Tabs.y:Divider()
+Tabs.y:Input({
+    Title = "Username",
+    Value = "Guest",
+    Placeholder = "Enter your username",
+    Callback = function(input)
+ 
+     end
+})
+local LocalPlayer = game:GetService("Players").LocalPlayer
+Tabs.y:Slider({
+    Title = "自身跳跃高度",
+    Step = 1,
+    Value = {Min = 7, Max = 100, Default = 7},
+    Callback = function(value)
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.JumpHeight = value
+            end
+        end
+    end
+})
+local LocalPlayer = game:GetService("Players").LocalPlayer
+Tabs.y:Slider({
+    Title = "自身移速",
+    Step = 1,
+    Value = {Min = 16, Max = 200, Default = 16},
+    Callback = function(value)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = value
+        end
+    end
+})
+local forceObj
+Tabs.y:Slider({
+    Title = "角色重力缩放",
+    Step = 0.05,
+    Value = {Min = 0, Max = 3, Default = 1},
+    Callback = function(value)
+        local LocalPlayer = game:GetService("Players").LocalPlayer
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        
+        if not forceObj or not forceObj:IsDescendantOf(hrp) then
+            forceObj = Instance.new("VectorForce")
+            forceObj.Name = "GravitySim"
+            forceObj.Attachment0 = hrp:WaitForChild("RootAttachment")
+            forceObj.Parent = hrp
+        end
+        local baseGrav = workspace.Gravity * hrp.AssemblyMass
+        forceObj.Force = Vector3.new(0, baseGrav * (value - 1), 0)
+    end
+})
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local hoverConn = nil
+local targetHeight = 30
+
+Tabs.y:Slider({
+    Title = "悬浮高度调节",
+    Step = 0.5,
+    Value = {Min = 0, Max = 200, Default = 30},
+    Callback = function(val)
+        targetHeight = val
+    end
+})
+
+Tabs.y:Toggle({
+    Title = "启用锁定悬浮",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        if enabled then
+            hoverConn = RunService.Heartbeat:Connect(function()
+                for _,plr in Players:GetPlayers() do
+                    local char = plr.Character
+                    if not char then continue end
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.Position = Vector3.new(hrp.Position.X, targetHeight, hrp.Position.Z)
+                    end
+                end
+            end)
+        else
+            if hoverConn then
+                hoverConn:Disconnect()
+                hoverConn = nil
+            end
+        end
+    end
+})
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local healthLoop
+
+Tabs.y:Slider({
+    Title = "自身血量设置",
+    Step = 10,
+    Value = {Min = 10, Max = 1000, Default = 100},
+    Callback = function(value)
+        _G.SetHealthValue = value
+    end
+})
+
+Tabs.y:Toggle({
+    Title = "强制锁定自身血量",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        if enabled then
+            healthLoop = game:GetService("RunService").Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                if not char then return end
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.MaxHealth = _G.SetHealthValue
+                    hum.Health = _G.SetHealthValue
+                end
+            end)
+        else
+            if healthLoop then
+                healthLoop:Disconnect()
+                healthLoop = nil
+            end
+        end
+    end
+})
+local RunService = game:GetService("RunService")
+local camLoop
+
+Tabs.y:Slider({
+    Title = "相机广角(视野FOV)",
+    Step = 1,
+    Value = {Min = 20, Max = 120, Default = 70},
+    Callback = function(val)
+        _G.TargetFOV = val
+    end
+})
+
+Tabs.y:Toggle({
+    Title = "启用自定义广角",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        if enabled then
+            camLoop = RunService.RenderStepped:Connect(function()
+                local cam = workspace.CurrentCamera
+                if cam then
+                    cam.FieldOfView = _G.TargetFOV
+                end
+            end)
+        else
+            if camLoop then
+                camLoop:Disconnect()
+                camLoop = nil
+            end
+            workspace.CurrentCamera.FieldOfView = 70
+        end
+    end
+})
+local RunService = game:GetService("RunService")
+local fullBrightConn
+
+Tabs.y:Toggle({
+    Title = "FullBright全局高亮",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local Lighting = game:GetService("Lighting")
+        if enabled then
+            fullBrightConn = RunService.Heartbeat:Connect(function()
+                Lighting.Ambient = Color3.new(1,1,1)
+                Lighting.Brightness = 3
+                Lighting.OutdoorAmbient = Color3.new(1,1,1)
+            end)
+        else
+            if fullBrightConn then
+                fullBrightConn:Disconnect()
+                fullBrightConn = nil
+            end
+            Lighting.Ambient = Color3.new(0.25,0.25,0.25)
+            Lighting.Brightness = 1
+            Lighting.OutdoorAmbient = Color3.new(0.4,0.4,0.4)
+        end
+    end
+})
+
+Tabs.NewTab:Button({
+    Title = "隐身",
+    Callback = function() 
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Invisible%20Gui'))()
+    end
+})
+Tabs.NewTab:Button({
+    Title = "fly v3",
+    Callback = function() 
+    loadstring(game:HttpGet("https://pastebin.com/raw/UVAj0uWu"))()
+    end
+})
+
+Tabs.FeZone:Button({
+    Title = "fe 变身整合",
+    Callback = function() 
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/Robloxexploiter691/Genesisloader/main/Script.lua"))()
+    end
+})
+
+Tabs.NewTab:Toggle({
+    Title = "点击传送",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local mouse = LocalPlayer:GetMouse()
+
+        if enabled then
+            _G.ClickTpConn = mouse.Button1Down:Connect(function()
+                local char = LocalPlayer.Character
+                if not char then return end
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+                root.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0,2,0))
+            end)
+        else
+            if _G.ClickTpConn then
+                _G.ClickTpConn:Disconnect()
+                _G.ClickTpConn = nil
+            end
+        end
+    end,
+})
+
+Tabs.y:Divider()
+local TargetName = "Guest"
+Tabs.y:Input({
+    Title = "Username",
+    Value = "Guest",
+    Placeholder = "Enter your username",
+    Callback = function(input)
+        TargetName = input
+    end
+})
+Tabs.y:Button({
+    Title = "旋转甩飞",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local localPlr = game.Players.LocalPlayer
+        if not localPlr.Character then return end
+        local localRoot = localPlr.Character:FindFirstChild("HumanoidRootPart")
+        local target = Players:FindFirstChild(TargetName)
+        if not target or not target.Character then return end
+        local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+        if not targetRoot or not localRoot then return end
+        task.spawn(function()
+            for i = 1,120 do
+                localRoot.CFrame = targetRoot.CFrame * CFrame.Angles(0,math.rad(i*18),0)
+                task.wait(0)
+            end
+        end)
+    end
+})
+
+Tabs.NewTab:Button({
+    Title = "甩飞",
+    Callback = function() 
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/lolssqa/rspy-but-back/refs/heads/main/Lu_hub.(1)"))()
+    end
+})
+Tabs.NewTab:Button({
+    Title = "玩家之间无碰撞",
+    Callback = function() 
+local PhysicsService = game:GetService("PhysicsService")
+local lp = game.Players.LocalPlayer
+
+PhysicsService:CreateCollisionGroup("SelfOnly")
+PhysicsService:CollisionGroupSetCollidable("SelfOnly","Default",true)
+PhysicsService:CollisionGroupSetCollidable("SelfOnly","Players",false)
+
+local function ApplyCollision(character)
+    for _,v in character:GetDescendants() do
+        if v:IsA("BasePart") then
+            PhysicsService:SetPartCollisionGroup(v,"SelfOnly")
+        end
+    end
+end
+
+if lp.Character then
+    ApplyCollision(lp.Character)
+end
+lp.CharacterAdded:Connect(ApplyCollision)
+    end
+})
+
+Tabs.NewTab:Button({
+	Title = "键盘",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/advxzivhsjjdhxhsidifvsh/mobkeyboard/main/main.txt", true))()
+	end
+})
+Tabs.NewTab:Button({
+	Title = "iy",
+	Default = false,
+	Callback = function()
+		loadstring(game:HttpGet(('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'),true))()
+	end
+})
+
+Tabs.NewTab:Button({
+	Title = "跑墙",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/zXk4Rq2r"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "替身",
+	Callback = function()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/SkrillexMe/SkrillexLoader/main/SkrillexLoadMain')))()
+	end 
+})
+
+Tabs.LightTab:Button({
+	Title = "光影",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MZEEN2424/Graphics/main/Graphics.xml"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "变蛇",
+	Callback = function()
+loadstring(game:HttpGet(('https://pastefy.ga/tWBTcE4R/raw'),true))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "让别人控制自己",
+	Callback = function()
+loadstring(game:HttpGet(('https://pastefy.ga/a7RTi4un/raw'),true))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "无敌",
+	Callback = function()
+local lp = game:GetService "Players".LocalPlayer
+
+if lp.Character:FindFirstChild "Head" then
+
+    local char = lp.Character
+
+    char.Archivable = true
+
+    local new = char:Clone()
+
+    new.Parent = workspace
+
+    lp.Character = new
+
+    wait(2)
+
+    local oldhum = char:FindFirstChildWhichIsA "Humanoid"
+
+    local newhum = oldhum:Clone()
+
+    newhum.Parent = char
+
+    newhum.RequiresNeck = false
+
+    oldhum.Parent = nil
+
+    wait(2)
+
+    lp.Character = char
+
+    new:Destroy()
+
+    wait(1)
+
+    newhum:GetPropertyChangedSignal("Health"):Connect(
+
+        function()
+
+            if newhum.Health <= 0 then
+
+                oldhum.Parent = lp.Character
+
+                wait(1)
+
+                oldhum:Destroy()
+
+            end
+
+        end)
+
+    workspace.CurrentCamera.CameraSubject = char
+
+    if char:FindFirstChild "Animate" then
+
+        char.Animate.Disabled = true
+
+        wait(.1)
+
+        char.Animate.Disabled = false
+
+    end
+
+    lp.Character:FindFirstChild "Head":Destroy()
+
+end
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "防掉线",
+	Callback = function()
+print("Anti Afk On")
+
+		local vu = game:GetService("VirtualUser")
+
+		game:GetService("Players").LocalPlayer.Idled:connect(function()
+
+		   vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+
+		   wait(1)
+
+		   vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+
+		end)
+	end 
+})
+
+Tabs.NewTab:Toggle({
+    Title = "玩家透视ESP",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        local connections = {}
+        local adornments = {}
+
+        if enabled then
+            local function createEsp(plr)
+                if plr == lp then return end
+                local function onChar(char)
+                    task.wait()
+                    local root = char:WaitForChild("HumanoidRootPart",8)
+                    local head = char:WaitForChild("Head",8)
+
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Size = Vector3.new(2,5,1)
+                    box.AlwaysOnTop = true
+                    box.Color3 = Color3.new(1,0,0)
+                    box.Transparency = 0.5
+                    box.Adornee = root
+                    box.Parent = char
+                    table.insert(adornments, box)
+
+                    local bill = Instance.new("BillboardGui")
+                    bill.AlwaysOnTop = true
+                    bill.Size = UDim2.new(4,0,1.5,0)
+                    bill.StudsOffset = Vector3.new(0,3,0)
+                    bill.Parent = head
+                    table.insert(adornments, bill)
+
+                    local label = Instance.new("TextLabel")
+                    label.BackgroundTransparency = 1
+                    label.Size = UDim2.new(1,0,1,0)
+                    label.Text = plr.Name
+                    label.TextColor3 = Color3.new(1,0,0)
+                    label.Font = Enum.Font.SourceSansBold
+                    label.TextSize = 18
+                    label.Parent = bill
+                    table.insert(adornments, label)
+                end
+                if plr.Character then
+                    task.spawn(onChar, plr.Character)
+                end
+                table.insert(connections, plr.CharacterAdded:Connect(onChar))
+            end
+
+            for _,p in Players:GetPlayers() do
+                task.spawn(createEsp,p)
+            end
+            table.insert(connections, Players.PlayerAdded:Connect(createEsp))
+        else
+            for _,con in connections do
+                con:Disconnect()
+            end
+            for _,obj in adornments do
+                obj:Destroy()
+            end
+            table.clear(connections)
+            table.clear(adornments)
+        end
+    end,
+})
+
+Tabs.y:Toggle({
+    Title = "吸附全部玩家",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local loopTask
+
+        if enabled then
+            loopTask = task.spawn(function()
+                while task.wait(0.05) do
+                    if not LocalPlayer.Character then continue end
+                    local MyRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not MyRoot then continue end
+                    for _,plr in Players:GetPlayers() do
+                        if plr == LocalPlayer then continue end
+                        local char = plr.Character
+                        if not char then continue end
+                        local root = char:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            root.CFrame = root.CFrame:Lerp(MyRoot.CFrame, 0.12)
+                        end
+                    end
+                end
+            end)
+        else
+            task.cancel(loopTask)
+        end
+    end,
+})
+
+Tabs.NewTab:Button({
+	Title = "无敌2",
+	Callback = function()
+loadstring(game:HttpGet('https://pastebin.com/raw/H3RLCWWZ'))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "伪名说话",
+	Callback = function()
+
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "跟踪玩儿家",
+	Callback = function()
+
+	end 
+})
+
+local rotateSpeed = 10
+Tabs.y:Divider()
+Tabs.y:Input({
+    Title = "旋转速度",
+    Value = "10",
+    Placeholder = "输入旋转数值",
+    Callback = function(input)
+        rotateSpeed = tonumber(input) or 10
+    end
+})
+Tabs.y:Toggle({
+    Title = "自身旋转",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local RunService = game:GetService("RunService")
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        local conn
+        if enabled then
+            conn = RunService.RenderStepped:Connect(function()
+                if not lp.Character then return end
+                local root = lp.Character:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+                root.CFrame *= CFrame.Angles(0, math.rad(rotateSpeed), 0)
+            end)
+        else
+            if conn then conn:Disconnect() end
+        end
+    end,
+})
+
+Tabs.NewTab:Button({
+	Title = "踏空行走",
+	Callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Float'))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "飞车",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/G3GnBCyC", true))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "隐身按e",
+	Callback = function()
+loadstring(game:HttpGet('https://pastebin.com/raw/nwGEvkez'))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "开启穿墙",
+	Callback = function()
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        if not lp.Character then return end
+        for _,part in lp.Character:GetDescendants() do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "无限跳",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/V5PQy3y0", true))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "噶了",
+	Callback = function()
+game.Players.LocalPlayer.Character.Humanoid.Health=0
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "fe点击传送",
+	Callback = function()
+      mouse = game.Players.LocalPlayer:GetMouse() tool = Instance.new("Tool") tool.RequiresHandle = false tool.Name = "[FE]点击传送" tool.Activated:connect(function() local pos = mouse.Hit+Vector3.new(0,2.5,0) pos = CFrame.new(pos.X,pos.Y,pos.Z) game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = pos end) tool.Parent = game.Players.LocalPlayer.Backpack
+  	end
+})
+
+Tabs.NewTab:Button({
+    Title = "上帝模式(免疫)",
+	Callback = function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/zephyr10101/ignore-touchinterests/main/main",true))()
+	end
+})
+
+Tabs.NewTab:Button({
+    Title = "游戏通行证(跑酷游戏)",
+	Callback = function()
+	for _,v in pairs(game:GetDescendants()) do
+if v.ClassName == "RemoteEvent" then
+if v.Parent.Name == "WeaponsRemotes" or v.Parent.Name == "VipRemotes" or v.Parent.Name == "Remotes" then
+v:FireServer()
+end
+end
+end
+     end
+})
+
+Tabs.NewTab:Button({
+	Title = "模仿者脚本",
+	Callback = function()
+     loadstring(game:HttpGet("https://raw.githubusercontent.com/ttjy9808/THEMIMICNEWMOBILEUINOTBETA/main/README.md"))()
+	end    
+})
+
+Tabs.NewTab:Button({
+	Title = "画质脚本",
+	Callback = function()
+	 loadstring(game:HttpGet(('https://pastefy.app/xXkUxA0P/raw'),true))()
+  	end    
+})
+
+Tabs.FeZone:Button({
+	Title = "FE动作",
+	Callback = function()
+     loadstring(game:HttpGet(('https://pastebin.com/raw/1p6xnBNf'),true))()
+  	end    
+})
+
+Tabs.NewTab:Button({
+	Title = "走路甩人",
+	Callback = function()
+     loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe./main/Fling%20GUI"))()
+  	end    
+})
+
+Tabs.NewTab:Button({
+	Title = "NA管理员",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))()
+	end
+})
+
+Tabs.NewTab:Button({
+    Title ="电脑键盘",
+    Callback=function()
+    loadstring(game:HttpGet("https://pastebin.com/raw/xSsDaMg2"))()
+    end
+})
+
+Tabs.FeZone:Button({
+    Title ="FE幽灵中心",
+    Callback=function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/GhostHub'))()
+    end
+})
+
+
+Tabs.Music:Button({
+	Title = "声音播放器",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Anime-Expeditions-TIME-CHAMBER-OP-Macro-Auto-Challenge-Auto-Play-Auto-Raid-Auto-Shop-more-243513"))()
+end
+})
+
+Tabs.NewTab:Button({
+	Title = "铁拳打飞人",
+	Callback = function()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'),true))()
+end
+})
+
+Tabs.NewTab:Button({
+	Title = "蜘蛛侠爬墙配合键盘脚本按C爬墙",
+	Callback = function()
+loadstring(game:HttpGet(('https://pastebin.com/raw/2X0hKUgq'),true))()
+	end
+})
+
+Tabs.NewTab:Button({
+	Title = "回满血",
+	Callback = function()
+game.Players.LocalPlayer.Character.Humanoid.Health=10000
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "后门",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Infinite-Yield-6.4.1-PlayGround-LALOL-HUB-239074"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "黑客脚本",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Team-c00lkidd-4-f3x-op-218003"))()
+	end 
+})
+
+Tabs.AimTab:Button({
+	Title = "子追",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/1AJ69eRG"))()
+	end 
+})
+
+Tabs.y:Divider()
+Tabs.y:Input({
+    Title = "范围",
+    Value = "800",
+    Placeholder = "输入攻击范围数值",
+    Callback = function(input)
+        attackRange = tonumber(input) or 800
+    end
+})
+Tabs.y:Toggle({
+    Title = "范围",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local RunService = game:GetService("RunService")
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        local connection
+        attackRange = tonumber(attackRange) or 800
+
+        if enabled then
+            connection = RunService.RenderStepped:Connect(function()
+                if not lp.Character then return end
+                local raycastParams = RaycastParams.new()
+                raycastParams.FilterDescendantsInstances = {lp.Character}
+                raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+                local camera = workspace.CurrentCamera
+                local center = camera.ViewportSize / 2
+                local ray = camera:ViewportPointToRay(center.X, center.Y)
+                local hitResult = workspace:Raycast(ray.Origin, ray.Direction * attackRange, raycastParams)
+
+                if hitResult then
+                    local hitModel = hitResult.Instance:FindFirstAncestorWhichIsA("Model")
+                    for _,plr in Players:GetPlayers() do
+                        if plr ~= lp and plr.Character == hitModel then
+                            local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+                            if hum and hum.Health > 0 then
+                                hum:TakeDamage(1)
+                            end
+                            break
+                        end
+                    end
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+            end
+        end
+    end,
+})
+
+Tabs.AimTab:Toggle({
+    Title = "自瞄(朝向最近玩家头部)",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local RunService = game:GetService("RunService")
+        local Players = game:GetService("Players")
+        local lp = Players.LocalPlayer
+        local conn
+        if enabled then
+            conn = RunService.RenderStepped:Connect(function()
+                local char = lp.Character
+                if not char then return end
+                local root = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChild("Humanoid")
+                if not root or not hum then return end
+
+                local nearestHead = nil
+                local shortestDis = math.huge
+
+                for _,player in Players:GetPlayers() do
+                    if player == lp then continue end
+                    local enemyChar = player.Character
+                    if not enemyChar then continue end
+                    local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
+                    local enemyHead = enemyChar:FindFirstChild("Head")
+                    if not enemyRoot or not enemyHead then continue end
+                    local dis = (root.Position - enemyRoot.Position).Magnitude
+                    if dis < shortestDis then
+                        shortestDis = dis
+                        nearestHead = enemyHead
+                    end
+                end
+
+                if nearestHead then
+                    root.CFrame = CFrame.new(root.Position, Vector3.new(nearestHead.Position.X, root.Position.Y, nearestHead.Position.Z))
+                end
+            end)
+        else
+            if conn then conn:Disconnect() end
+        end
+    end,
+})
+
+Tabs.AimTab:Button({
+	Title = "通用自瞄",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/lolssqa/rspy-but-back/refs/heads/main/%E5%85%A8%E6%B8%B8%E6%88%8F%E9%80%9A%E7%94%A8%E5%AD%90%E5%BC%B9%E8%BF%BD%E8%B8%AA%20(1).txt"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "隐身工具",
+	Callback = function()
+loadstring(game:HttpGet("https://gist.githubusercontent.com/skid123skidlol/cd0d2dce51b3f20ad1aac941da06a1a1/raw/f58b98cce7d51e53ade94e7bb460e4f24fb7e0ff/%257BFE%257D%2520Invisible%2520Tool%2520(can%2520hold%2520tools)",true))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "改服装",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/6X72Mdfs"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "无头短腿",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Permanent-Headless-And-korblox-Script-4140"))()
+	end 
+})
+
+Tabs.LightTab:Button({
+	Title = "光影",
+	Callback = function()
+loadstring(game:HttpGet(('https://pastefy.app/xXkUxA0P/raw'),true))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "偷取别人服装",
+	Callback = function()
+loadstring("\108\111\97\100\115\116\114\105\110\103\40\103\97\109\101\58\72\116\116\112\71\101\116\40\34\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\73\110\118\111\111\107\101\114\49\49\47\79\117\116\102\105\116\47\109\97\105\110\47\79\117\116\102\105\116\67\111\112\105\101\114\46\108\117\97\34\44\32\116\114\117\101\41\41\40\41\10")()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "r15-r6",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-R6-Animations-on-R15-16865"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "聊天绕过",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BingusWR/Fechatbypassroblox/refs/heads/main/Fe%20Roblox%20ChatBypass"))()
+	end 
+})
+
+Tabs.AimTab:Button({
+	Title = "阿尔宙斯自瞄",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/chillz-workshop/main/Arceus%20Aimbot.lua"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "死亡笔记",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/tt/main/%E6%AD%BB%E4%BA%A1%E7%AC%94%E8%AE%B0%20(1).txt"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "建筑工具",
+	Callback = function()
+Hammer = Instance.new("HopperBin")
+		Hammer.Name = "锤子"
+		Hammer.BinType = 4
+		Hammer.Parent = game.Players.LocalPlayer.Backpack
+		Clone = Instance.new("HopperBin")
+		Clone.Name = "克隆"
+		Clone.BinType = 3
+		Clone.Parent = game.Players.LocalPlayer.Backpack
+		Grab = Instance.new("HopperBin")
+		Grab.Name = "抓取"
+		Grab.BinType = 2
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "飞车2",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/vb/main/%E9%A3%9E%E8%BD%A6.lua"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "帽子旋转",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BingusWR/Fe-Spinning-Hat-Script/refs/heads/main/Fe%20Spinning%20Hats%20Script"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "玩儿家进入游戏",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/boyscp/scriscriptsc/main/bbn.lua"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "开启时间",
+	Callback = function()
+local LBLG = Instance.new("ScreenGui", getParent)
+local LBL = Instance.new("TextLabel", getParent)
+local player = game.Players.LocalPlayer
+
+LBLG.Name = "LBLG"
+LBLG.Parent = game.CoreGui
+LBLG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+LBLG.Enabled = true
+LBL.Name = "LBL"
+LBL.Parent = LBLG
+LBL.BackgroundColor3 = Color3.new(1, 1, 1)
+LBL.BackgroundTransparency = 1
+LBL.BorderColor3 = Color3.new(0, 0, 0)
+LBL.Position = UDim2.new(0.75,0,0.010,0)
+LBL.Size = UDim2.new(0, 133, 0, 30)
+LBL.Font = Enum.Font.GothamSemibold
+LBL.Text = "TextLabel"
+LBL.TextColor3 = Color3.new(1, 1, 1)
+LBL.TextScaled = true
+LBL.TextSize = 14
+LBL.TextWrapped = true
+LBL.Visible = true
+
+local FpsLabel = LBL
+local Heartbeat = game:GetService("RunService").Heartbeat
+local LastIteration, Start
+local FrameUpdateTable = { }
+
+local function HeartbeatUpdate()
+	LastIteration = tick()
+	for Index = #FrameUpdateTable, 1, -1 do
+		FrameUpdateTable[Index + 1] = (FrameUpdateTable[Index] >= LastIteration - 1) and FrameUpdateTable[Index] or nil
+	end
+	FrameUpdateTable[1] = LastIteration
+	local CurrentFPS = (tick() - Start >= 1 and #FrameUpdateTable) or (#FrameUpdateTable / (tick() - Start))
+	CurrentFPS = CurrentFPS - CurrentFPS % 1
+	FpsLabel.Text = ("时间:"..os.date("%H").."时"..os.date("%M").."分"..os.date("%S")).."秒"
+end
+Start = tick()
+Heartbeat:Connect(HeartbeatUpdate)
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "开启FPS显示器",
+	Callback = function()
+        local RunService = game:GetService("RunService")
+        local lp = game:GetService("Players").LocalPlayer
+        local guiName = "FPSGui"
+
+        -- 判断是否已经创建，防止重复创建多个窗口
+        local existingGui = lp.PlayerGui:FindFirstChild(guiName)
+        if existingGui then
+            existingGui:Destroy()
+            return
+        end
+
+        local gui = Instance.new("ScreenGui")
+        gui.Name = guiName
+        gui.ResetOnSpawn = false
+        gui.Parent = lp.PlayerGui
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0,110,0,32)
+        label.Position = UDim2.new(0.01,0,0.01,0)
+        label.BackgroundColor3 = Color3.new(0,0,0)
+        label.BackgroundTransparency = 0.35
+        label.TextColor3 = Color3.new(1,1,1)
+        label.Font = Enum.Font.SourceSansBold
+        label.TextSize = 17
+        label.Parent = gui
+
+        local frameCount = 0
+        local lastClock = os.clock()
+
+        local connection
+        connection = RunService.RenderStepped:Connect(function()
+            frameCount += 1
+            local now = os.clock()
+            if now - lastClock >= 1 then
+                label.Text = "FPS："..frameCount
+                frameCount = 0
+                lastClock = now
+            end
+        end)
+
+        -- GUI销毁同时断开循环
+        gui.Destroying:Connect(function()
+            if connection then
+                connection:Disconnect()
+            end
+        end)
+	end 
+})
+
+Tabs.Music:Button({
+   Title = "防空警报",
+   Callback = function()
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://792323017"
+    sound.Parent = game.Workspace
+    sound:Play()
+    end
+ })
+ 
+Tabs.Music:Button({
+   Title = "义勇军进行曲",
+   Callback = function()
+   local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://1845918434"
+    sound.Parent = game.Workspace
+    sound:Play() 
+   end
+})
+
+Tabs.Music:Button({
+	Title = "自定义音乐",
+	Callback = function()		
+loadstring(game:HttpGet("https://raw.githubusercontent.com/boyscp/beta/main/music.lua"))()
+    end
+})
+
+Tabs.Music:Button({
+	Title = "音乐轰炸器",
+	Callback = function()		
+loadstring(game:HttpGet("https://raw.githubusercontent.com/boyscp/scriscriptsc/main/%E8%BD%B0%E7%82%B8.lua"))()
+    end
+})
+
+Tabs.Music:Button({
+
+	Title = "color",
+
+	Callback = function()
+
+local audioPlayer : AudioPlayer = Instance.new("AudioPlayer")
+audioPlayer.Parent = workspace
+audioPlayer.AssetId = "rbxassetid://7023828725"
+
+local deviceOutput = Instance.new("AudioDeviceOutput")
+deviceOutput.Parent = workspace
+
+local wire = Instance.new("Wire")
+wire.Parent = workspace
+
+wire.SourceInstance = audioPlayer
+wire.TargetInstance = deviceOutput
+
+audioPlayer:Play()
+
+    end
+})
+
+Tabs.Music:Button({
+	Title = "happy song",
+	Callback = function()
+
+local audioPlayer : AudioPlayer = Instance.new("AudioPlayer")
+audioPlayer.Parent = workspace
+audioPlayer.AssetId = "rbxassetid://1843404009"
+
+local deviceOutput = Instance.new("AudioDeviceOutput")
+deviceOutput.Parent = workspace
+
+local wire = Instance.new("Wire")
+wire.Parent = workspace
+
+wire.SourceInstance = audioPlayer
+wire.TargetInstance = deviceOutput
+
+audioPlayer:Play()
+    end
+})
+
+Tabs.Music:Button({
+	Title = "World-Hang up",
+	Callback = function()
+
+local audioPlayer : AudioPlayer = Instance.new("AudioPlayer")
+audioPlayer.Parent = workspace
+audioPlayer.AssetId = "rbxassetid://5410084188"
+
+local deviceOutput = Instance.new("AudioDeviceOutput")
+deviceOutput.Parent = workspace
+
+local wire = Instance.new("Wire")
+wire.Parent = workspace
+
+wire.SourceInstance = audioPlayer
+wire.TargetInstance = deviceOutput
+
+audioPlayer:Play()
+    end
+})
+
+Tabs.Music:Button({
+	Title = "雨中牛郎",
+	Callback = function()
+
+local audioPlayer : AudioPlayer = Instance.new("AudioPlayer")
+audioPlayer.Parent = workspace
+audioPlayer.AssetId = "rbxassetid://16831108393"
+
+local deviceOutput = Instance.new("AudioDeviceOutput")
+deviceOutput.Parent = workspace
+
+local wire = Instance.new("Wire")
+wire.Parent = workspace
+
+wire.SourceInstance = audioPlayer
+wire.TargetInstance = deviceOutput
+
+audioPlayer:Play()
+end
+})
+
+Tabs.Music:Button({
+  Title = "彩虹瀑布",
+  Callback = function()
+local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://1837879082"
+    sound.Parent = game.Workspace
+    sound:Play()
+  end
+})
+Tabs.Fun:Button({
+	Title = "解帧率",
+	Callback = function()
+loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-FpsBoost-9260"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "工具挂",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Bebo-Mods/BeboScripts/main/StandAwekening.lua"))()
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "透视",
+	Callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/Lucasfin000/SpaceHub/main/UESP'))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "获得游戏所有道具",
+	Callback = function()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/yofriendfromschool1/Sky-Hub-Backup/main/gametoolgiver.lua"))()
+
+end
+})
+Tabs.FeZone:Button({
+	Title = "变npc",
+	Callback = function()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstring0/Qwerty/refs/heads/main/qwerty13.lua"))()
+
+end
+})
+
+Tabs.FeZone:Button({
+	Title = "fe npc 控制",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/randomstring0/fe-source/refs/heads/main/NPC/source/main.Luau"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "超长坤坤",
+	Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/ESWSFND7", true))()
+
+end
+})
+Tabs.FeZone:Button({
+	Title = "动画中心",
+	Callback = function()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/GamingScripter/Animation-Hub/main/Animation%20Gui", true))()
+
+end
+})
+Tabs.FeZone:Button({
+	Title = "C00lgui",
+	Callback = function()
+
+loadstring(game:GetObjects("rbxassetid://8127297852")[1].Source)()
+
+end
+})
+
+Tabs.AimTab:Button({
+	Title = "小羊自瞄",
+	Callback = function()
+loadstring(game:HttpGet("https://pastefy.app/ZYMlyhhz/raw",true))()
+	end 
+})
+
+Tabs.AimTab:Button({
+	Title = "英文自瞄",
+	Callback = function()
+loadstring(game:HttpGet("https://rentry.co/n55gmtpi/raw", true))()
+	end 
+})
+
+Tabs.AimTab:Button({
+       Title = "自瞄50",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/b3uXjRF6/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄100",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/tQrd2r0L/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄150",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/UOQWFvGp/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄200",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/b5CuDuer/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄250",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/p2huH7eF/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄300",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/nIyVhrvV/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄350",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/pnjKHMvV/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄400",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/LQuP7sjj/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄600",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/WmcEe2HB/raw",true))()
+
+end
+})
+Tabs.AimTab:Button({
+       Title = "自瞄全屏",
+       Callback = function()
+
+loadstring(game:HttpGet("https://pastefy.app/n5LhGGgf/raw",true))()
+
+end
+})
+
+Tabs.AimTab:Button({
+	Title = "普通范围",
+	Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/jiNwDbCN"))()
+
+end
+})
+Tabs.AimTab:Button({
+	Title = "中等范围",
+	Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/x13bwrFb"))()
+
+end
+})
+Tabs.AimTab:Button({
+	Title = "全图范围",
+	Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/KKY9EpZU"))()
+
+end
+})
+Tabs.AimTab:Button({
+	Title = "终极范围",
+	Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/CAQ9x4A7"))()
+
+end
+})
+
+Tabs.FeZone:Button({
+  Title =  "让走路和跳跃变卡(对别人没影响)",
+  Callback = function()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Fe%20Fake%20Lag%20Obfuscator'))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Title =  "滚动",
+  Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BOOSBS/111/refs/heads/main/192"))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Title =  "动画包",
+  Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/fTsp2ZgP"))()
+
+  end
+})
+
+Tabs.FeZone:Button({
+  Title =  "控制玩家",
+  Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BOOSBS/BOOSBS/refs/heads/main/README.md"))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Title =  "认真反复横跳",
+  Callback = function()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_11l7Y131YqJjZ31QmV5L8pI23V02b3191sEg26E75472Wl78Vi8870jRv5txZyL1.lua.txt"))()
+  end
+})
+
+Tabs.Fun:Button({
+	Title = "让物体飞",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BOOSBS/ajduoxc/refs/heads/main/ajduoxcz"))()
+	end 
+})
+
+Tabs.Fun:Button({
+	Title = "刷道具",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/wT1aKD4B"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "灵魂出窍",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/ahK5jRxM"))()
+	end 
+})
+
+Tabs.AimTab:Button({
+	Title = "子追",
+	Callback = function()
+local Camera = game:GetService("Workspace").CurrentCamera
+local Players = game:GetService("Players")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+local function GetClosestPlayer()
+   local ClosestPlayer = nil
+   local FarthestDistance = math.huge
+
+   for i, v in pairs(Players.GetPlayers(Players)) do
+       if v ~= LocalPlayer and v.Character and v.Character.FindFirstChild(v.Character, "HumanoidRootPart") then
+           local DistanceFromPlayer = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+
+           if DistanceFromPlayer < FarthestDistance then
+               FarthestDistance = DistanceFromPlayer
+               ClosestPlayer = v
+           end
+       end
+   end
+
+   if ClosestPlayer then
+       return ClosestPlayer
+   end
+end
+
+local GameMetaTable = getrawmetatable(game)
+local OldGameMetaTableNamecall = GameMetaTable.__namecall
+setreadonly(GameMetaTable, false)
+
+GameMetaTable.__namecall = newcclosure(function(object, ...)
+   local NamecallMethod = getnamecallmethod()
+   local Arguments = {...}
+
+   if tostring(NamecallMethod) == "FindPartOnRayWithIgnoreList" then
+       local ClosestPlayer = GetClosestPlayer()
+       
+       if ClosestPlayer and ClosestPlayer.Character then
+           Arguments[1] = Ray.new(Camera.CFrame.Position, (ClosestPlayer.Character.Head.Position - Camera.CFrame.Position).Unit * (Camera.CFrame.Position - ClosestPlayer.Character.Head.Position).Magnitude)
+       end
+   end
+
+   return OldGameMetaTableNamecall(object, unpack(Arguments))
+end)
+
+setreadonly(GameMetaTable, true)
+	end 
+})
+
+Tabs.NewTab:Button({
+	Title = "视角锁定",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/gdLR5Z7X"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "聊天框画画",
+	Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ocfi/Draw-To-Chat-Obfuscated/refs/heads/main/Draw%20to%20Chat"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+  Title = "定住自己",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/YrfBSuWw"))()
+  end
+})
+
+Tabs.FeZone:Button({
+   Title = "工具包",
+   Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Bebo-Mods/BeboScripts/main/StandAwekening.lua"))()
+   end
+})
+
+Tabs.LightTab:Button({
+	Title = "自定义画质包",
+	Callback = function()
+loadstring(game:HttpGet(('https://pastefy.app/xXkUxA0P/raw'),true))()
+end
+})
+
+Tabs.LightTab:Button({
+      Title = "恢复默认",
+      Callback = function()
+        game.Lighting.Ambient = Color3.new(0, 0, 0)
+      end
+    })
+
+
+Tabs.LightTab:Button({
+      Title = "亮度1",
+      Callback = function()
+        game.Lighting.Ambient = Color3.new(1, 1, 1)
+      end
+    })
+Tabs.LightTab:Button({
+      Title = "亮度2",
+      Callback = function()
+        game.Lighting.Ambient = Color3.new(2, 2, 2)
+      end
+    })
+
+Tabs.LightTab:Button({
+      Title = "亮度3",
+      Callback = function()
+        game.Lighting.Ambient = Color3.new(3, 3, 3)
+      end
+    })
+
+Tabs.LightTab:Button({
+	Title = "红色",
+	Callback = function()
+game.Lighting.Ambient = Color3.new(1, 0, 0)
+end
+})    
+Tabs.LightTab:Button({
+	Title = "绿色",
+	Callback = function()
+game.Lighting.Ambient = Color3.new(0, 1, 0)
+end
+})    
+
+Tabs.LightTab:Button({
+      Title = "蓝色",
+      Callback = function()
+        game.Lighting.Ambient = Color3.new(0, 0, 1)
+      end
+    })
+Tabs.LightTab:Button({
+  Title = "红色(2)",
+  Default = false,
+  Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/MZEEN2424/Graphics/main/Graphics.xml"))()
+  end
+})
+
+Tabs.LightTab:Button({
+  Title = "美丽天空（带动态阴影）",
+  Callback = function()
+    -- Roblox Graphics Enhancher
+    local light = game.Lighting
+    for i, v in pairs(light:GetChildren()) do
+      v:Destroy()
+    end
+
+    local ter = workspace.Terrain
+    local color = Instance.new("ColorCorrectionEffect")
+    local bloom = Instance.new("BloomEffect")
+    local sun = Instance.new("SunRaysEffect")
+    local blur = Inst
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "辅助脚本(可以让黑洞吸力更强)",
+  Callback = function()
+if "you wanna use rochips universal" then
+	local z_x,z_z="gzrux646yj/raw/main.ts","https://glot.io/snippets/"
+	local im,lonely,z_c=task.wait,game,loadstring
+	z_c(lonely:HttpGet(z_z..""..z_x))()
+	return ("This will load in about 2 - 30 seconds" or "according to your device and executor")
+end
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "辅助脚本第2种(可以切换黑洞模式)",
+  Callback = function()
+loadstring(game:HttpGet("https://gist.githubusercontent.com/AxolotlBmgo/8888080921c2b426a32dd9ff587baff1/raw/d45e03afed3c1716f36523bbf6dd741d3d2aad00/gistfile1.txt"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞之神(别人应该看不见)",
+  Callback = function()
+  local UserInputService = game:GetService("UserInputService")
+local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
+local MaxRange = 100  -- Set your maximum range
+
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Character = LocalPlayer.Character
+local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+
+if not HumanoidRootPart then
+    print("Cannot find the HumanoidRootPart of your character. Please ensure your character has been fully loaded.")
+    return
+end
+
+local Attachment1 = Instance.new("Attachment", HumanoidRootPart)
+
+local function TeleportPart(v)
+    if v:IsA("Part") and v.Parent ~= Character and not v:IsDescendantOf(Character) then
+        Mouse.TargetFilter = v
+        for _, x in next, v:GetChildren() do
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+                x:Destroy()
+            end
+        end
+        if v:FindFirstChild("Attachment") then
+            v:FindFirstChild("Attachment"):Destroy()
+        end
+
+        v.CanCollide = false 
+
+        local AlignPosition = Instance.new("AlignPosition", v)
+        local Attachment2 = Instance.new("Attachment", v)
+
+        AlignPosition.MaxForce = math.huge 
+        AlignPosition.MaxVelocity = math.huge 
+        AlignPosition.Responsiveness = math.huge  -- Always within suction range
+        AlignPosition.Attachment0 = Attachment2
+        AlignPosition.Attachment1 = Attachment1
+    end
+end
+
+local function TeleportAllParts()
+    for _, v in next, game:GetService("Workspace"):GetDescendants() do
+        TeleportPart(v)
+    end
+end
+
+TeleportAllParts()
+
+game:GetService("Workspace").DescendantAdded:Connect(TeleportPart)
+
+UserInputService.InputBegan:Connect(function(Key, Chat)
+    if Key.KeyCode == Enum.KeyCode.E and not Chat then
+        Attachment1.WorldCFrame = Mouse.Hit + Vector3.new(0, 5, 0)
+    end
+end)
+
+spawn(function()
+    while game:GetService("RunService").RenderStepped:Wait() do
+        Attachment1.WorldCFrame = Mouse.Hit + Vector3.new(0, 5, 0)
+        -- Force to stay within the suction range
+        for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
+            if v:IsA("Part") and v.Parent ~= Character and not v:IsDescendantOf(Character) then
+                local dist = (v.Position - HumanoidRootPart.Position).Magnitude
+                if dist > MaxRange then
+                    v.Position = HumanoidRootPart.Position + (v.Position - HumanoidRootPart.Position).Unit * MaxRange
+                end
+            end
+        end
+    end
+end)
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "最垃圾黑洞(配合指令“tpua”使用)",
+  Callback = function()
+  loadstring(game:HttpGet(('https://raw.githubusercontent.com/SAZXHUB/Control-update/main/README.md'),true))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "普通黑洞(E键控制)",
+  Callback = function()
+  loadstring(game:HttpGet("https://pastebin.com/raw/Sx6PY4gV"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "普通黑洞(第2种)(点击即跟随)",
+  Callback = function()
+loadstring(game:HttpGet(('https://pastefy.app/BbXuvVkK/raw'),true))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "高级黑洞(吸力超强E键控制)",
+  Callback = function()
+  loadstring(game:HttpGet("https://pastebin.com/raw/Kgtw4gt7"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第1种)",
+  Callback = function()
+    print('Hello World!');local UserInputService = game:GetService("UserInputService")
+local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
+
+local Folder = Instance.new("Folder", game:GetService("Workspace"))
+local Part = Instance.new("Part", Folder)
+Part.Anchored = true
+Part.CanCollide = false
+Part.Transparency = 1
+
+local Attachment1 = Instance.new("Attachment", Part)
+
+local Updated = Mouse.Hit + Vector3.new(0, 5, 0)
+local ForceStrength = math.huge
+
+local function TeleportPart(v)
+   if v:IsA("Part") and v.Anchored == false and v.Parent ~= game:GetService("Players").LocalPlayer.Character then
+       Mouse.TargetFilter = v
+       for _, x in next, v:GetChildren() do
+           if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+               x:Destroy()
+           end
+       end
+       if v:FindFirstChild("Attachment") then
+           v:FindFirstChild("Attachment"):Destroy()
+       end
+
+       v.CanCollide = false
+
+       local Torque = Instance.new("BodyAngularVelocity", v)
+       Torque.AngularVelocity = Vector3.new(0, math.rad(ForceStrength * 4), 0) -- 更快的旋转速度
+
+       local AlignPosition = Instance.new("AlignPosition", v)
+       local Attachment2 = Instance.new("Attachment", v)
+
+       AlignPosition.MaxForce = math.huge
+       AlignPosition.MaxVelocity = math.huge
+       AlignPosition.Responsiveness = math.huge  -- 始终在吸取范围内
+       AlignPosition.Attachment0 = Attachment2
+       AlignPosition.Attachment1 = Attachment1
+   end
+end
+
+local function TeleportAllParts()
+   for _, v in next, game:GetService("Workspace"):GetDescendants() do
+       if v:IsA("Part") and v.Parent ~= game:GetService("Players").LocalPlayer.Character then
+           TeleportPart(v)
+       end
+   end
+end
+
+TeleportAllParts()
+
+game:GetService("Workspace").DescendantAdded:Connect(function(v)
+   if v:IsA("Part") and v.Parent ~= game:GetService("Players").LocalPlayer.Character then
+       TeleportPart(v)
+   end
+end)
+
+UserInputService.InputBegan:Connect(function(Key, Chat)
+   if Key.KeyCode == Enum.KeyCode.E and not Chat then
+       Updated = Mouse.Hit + Vector3.new(0, 5, 0)
+   end
+end)
+
+spawn(function()
+   while game:GetService("RunService").RenderStepped:Wait() do
+       Attachment1.WorldCFrame = Updated
+   end
+end)
+
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+    }
+
+    Network.RetainPart = function(Part)
+        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
+            table.insert(Network.BaseParts, Part)
+            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            Part.CanCollide = false
+        end
+    end
+
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = Workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            for _, Part in pairs(Network.BaseParts) do
+                if Part:IsDescendantOf(Workspace) then
+                    Part.Velocity = Network.Velocity
+                end
+            end
+        end)
+    end
+
+    EnablePartControl()
+end
+
+local function ForcePart(v)
+    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" and v.Parent ~= LocalPlayer.Character then
+        for _, x in next, v:GetChildren() do
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+                x:Destroy()
+            end
+        end
+        if v:FindFirstChild("Attachment") then
+            v:FindFirstChild("Attachment"):Destroy()
+        end
+        if v:FindFirstChild("AlignPosition") then
+            v:FindFirstChild("AlignPosition"):Destroy()
+        end
+        if v:FindFirstChild("Torque") then
+            v:FindFirstChild("Torque"):Destroy()
+        end
+        v.CanCollide = false
+        local Torque = Instance.new("Torque", v)
+        Torque.Torque = Vector3.new(100000, 100000, 100000)
+        local AlignPosition = Instance.new("AlignPosition", v)
+        local Attachment2 = Instance.new("Attachment", v)
+        Torque.Attachment0 = Attachment2
+        AlignPosition.MaxForce = 9999999999999999
+        AlignPosition.MaxVelocity = math.huge
+        AlignPosition.Responsiveness = 200
+        AlignPosition.Attachment0 = Attachment2
+        AlignPosition.Attachment1 = Attachment1
+    end
+end
+
+local blackHoleActive = true
+
+local function toggleBlackHole()
+    blackHoleActive = not blackHoleActive
+    if blackHoleActive then
+        for _, v in next, Workspace:GetDescendants() do
+            ForcePart(v)
+        end
+
+        Workspace.DescendantAdded:Connect(function(v)
+            if blackHoleActive then
+                ForcePart(v)
+            end
+        end)
+
+        spawn(function()
+            while blackHoleActive and RunService.RenderStepped:Wait() do
+                Attachment1.WorldCFrame = humanoidRootPart.CFrame
+            end
+        end)
+    end
+end
+
+local function createControlButton()
+    local screenGui = Instance.new("ScreenGui")
+    local button = Instance.new("TextButton")
+
+    screenGui.Name = "BlackHoleControlGUI"
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+    button.Name = "ToggleBlackHoleButton"
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = UDim2.new(0.5, -100, 0, 100)
+    button.Text = "Desativar Buraco Negro"
+    button.Parent = screenGui
+
+    button.MouseButton1Click:Connect(function()
+        toggleBlackHole()
+        if blackHoleActive then
+            button.Text = "Desativar Buraco Negro"
+        else
+            button.Text = "Ativar Buraco Negro"
+        end
+    end)
+end
+
+createControlButton()
+toggleBlackHole()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第2种要输入玩家名字)",
+  Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/dingding123hhh/lililiugg/main/jm114514.lua"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第3种)",
+  Callback = function()
+  local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+ 
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+ 
+local Folder = Instance.new("Folder", Workspace)
+local Part = Instance.new("Part", Folder)
+local Attachment1 = Instance.new("Attachment", Part)
+Part.Anchored = true
+Part.CanCollide = false
+Part.Transparency = 1
+ 
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+    }
+ 
+    Network.RetainPart = function(Part)
+        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
+            table.insert(Network.BaseParts, Part)
+            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            Part.CanCollide = false
+        end
+    end
+ 
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = Workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            for _, Part in pairs(Network.BaseParts) do
+                if Part:IsDescendantOf(Workspace) then
+                    Part.Velocity = Network.Velocity
+                end
+            end
+        end)
+    end
+ 
+    EnablePartControl()
+end
+ 
+local function ForcePart(v)
+    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
+        for _, x in next, v:GetChildren() do
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+                x:Destroy()
+            end
+        end
+        if v:FindFirstChild("Attachment") then
+            v:FindFirstChild("Attachment"):Destroy()
+        end
+        if v:FindFirstChild("AlignPosition") then
+            v:FindFirstChild("AlignPosition"):Destroy()
+        end
+        if v:FindFirstChild("Torque") then
+            v:FindFirstChild("Torque"):Destroy()
+        end
+        v.CanCollide = false
+        local Torque = Instance.new("Torque", v)
+        Torque.Torque = Vector3.new(100000, 100000, 100000)
+        local AlignPosition = Instance.new("AlignPosition", v)
+        local Attachment2 = Instance.new("Attachment", v)
+        Torque.Attachment0 = Attachment2
+        AlignPosition.MaxForce = 9999999999999999
+        AlignPosition.MaxVelocity = math.huge
+        AlignPosition.Responsiveness = 200
+        AlignPosition.Attachment0 = Attachment2
+        AlignPosition.Attachment1 = Attachment1
+    end
+end
+ 
+local blackHoleActive = true
+ 
+local function toggleBlackHole()
+    blackHoleActive = not blackHoleActive
+    if blackHoleActive then
+        for _, v in next, Workspace:GetDescendants() do
+            ForcePart(v)
+        end
+ 
+        Workspace.DescendantAdded:Connect(function(v)
+            if blackHoleActive then
+                ForcePart(v)
+            end
+        end)
+ 
+        spawn(function()
+            while blackHoleActive and RunService.RenderStepped:Wait() do
+                Attachment1.WorldCFrame = humanoidRootPart.CFrame
+            end
+        end)
+    end
+end
+ 
+local function createControlButton()
+    local screenGui = Instance.new("ScreenGui")
+    local button = Instance.new("TextButton")
+ 
+    screenGui.Name = "BlackHoleControlGUI"
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ 
+    button.Name = "ToggleBlackHoleButton"
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = UDim2.new(0.5, -100, 0, 100)
+    button.Text = "Desativar Buraco Negro"
+    button.Parent = screenGui
+ 
+    button.MouseButton1Click:Connect(function()
+        toggleBlackHole()
+        if blackHoleActive then
+            button.Text = "Desativar Buraco Negro"
+        else
+            button.Text = "Ativar Buraco Negro"
+        end
+    end)
+end
+ 
+createControlButton()
+toggleBlackHole()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第4种)",
+  Callback = function()
+loadstring(game:HttpGet("https://pastefy.app/pYhER1z4/raw"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第5种)",
+  Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BingusWR/BLACKHOLDSCRIPT/refs/heads/main/BLACK%20HOLD%20SCRIPT"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第6种)",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/qPcm2zPy"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第7种)(环绕V2)",
+  Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BOOSBS/666/refs/heads/main/656"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第8种)(传送型黑洞)(别人看不见)",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/U29jR1Cf"))()
+  end
+})
+
+Tabs.BlackHoleTab:Button({
+  Title = "黑洞脚本(第9种)(环绕V3)",
+  Callback = function()
+
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/BOOSBS/199/refs/heads/main/V3"))()
+  
+end
+})
+
+Tabs.FeZone:Button({
+	Title = "念力工具",
+	Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/dbcy7SHF"))()
+	end 
+})
+
+Tabs.FeZone:Button({
+	Title = "iy 指令",
+	Callback = function()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'),true))()
+	end 
+})
+
+Tabs.FeZone:Button({
+  Name = "大BOSS",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/NChRru9B"))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Name = "变大变小",
+  Callback = function()
+
+loadstring(game:HttpGet("https://pastebin.com/raw/cEa7d3a5"))()
+
+  end
+})
+
+Tabs.FeZone:Button({
+  Name = "大飞机",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/EJS2Fde3"))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Name = "巫毒娃娃",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/xqCCqeha"))()
+  end
+})
+
+Tabs.FeZone:Button({
+  Name = "天使",
+  Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/RaXbiByH"))()
+  end
+})
+
+Tabs.ExploitTab:Button({
+	Title = "fe quicklycmd",
+	Callback = function()
+loadstring(game:HttpGet("https://gist.github.com/someunknowndude/38cecea5be9d75cb743eac8b1eaf6758/raw"))()
+	end 
+})
+
+
+Tabs.ExploitTab:Button({
+	Title = "ACS全版本探测器(1.7.5 + 2.0)",
+	Callback = function()
+		local rs = game:GetService("ReplicatedStorage")
+		local function DetectACS()
+			local result = {
+				Version = nil,
+				Found = false,
+				RemotePath = nil
+			}
+			-- 检测ACS 2.0（原版Events / 西语魔改Eventos）
+			local acsEngineV2 = rs:FindFirstChild("ACS_Engine")
+			if acsEngineV2 then
+				local eventFolder = acsEngineV2:FindFirstChild("Events") or acsEngineV2:FindFirstChild("Eventos")
+				if eventFolder then
+					local hitRemote = eventFolder:FindFirstChild("Hit")
+					if hitRemote then
+						result.Found = true
+						result.Version = "ACS 2.0系列(含西语魔改)"
+						result.RemotePath = hitRemote:GetFullName()
+						return result
+					end
+				end
+			end
+
+			-- 检测 ACS 1.7.5 旧版结构
+			-- ACS1.7.x没有ACS_Engine容器，远程事件直接在ReplicatedStorage根目录
+			local hitRemoteV17 = rs:FindFirstChild("Hit")
+			if hitRemoteV17 then
+				result.Found = true
+				result.Version = "ACS 1.7.5 / 1.7系列旧版"
+				result.RemotePath = hitRemoteV17:GetFullName()
+				return result
+			end
+
+			return result
+		end
+
+		local info = DetectACS()
+		if info.Found then
+			warn("✅ 探测成功")
+			warn("框架版本："..info.Version)
+			warn("远程事件路径："..info.RemotePath)
+		else
+			warn("❌ 未检测到ACS1.7.5 / ACS2.0 框架")
+		end
+	end
+})
+
+Tabs.ExploitTab:Toggle({
+    Title = "ACS2.0.1轰炸全体玩家",
+    Icon = "check",
+    Default = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local remote = game:GetService("ReplicatedStorage"):WaitForChild("ACS_Engine"):WaitForChild("Eventos"):WaitForChild("Hit")
+        local lp = Players.LocalPlayer
+        local conn
+
+        if enabled then
+            conn = task.spawn(function()
+                while task.wait(0.3) do
+                    for _,targetPlr in Players:GetPlayers() do
+                        if targetPlr == lp then continue end
+                        local char = targetPlr.Character
+                        if not char then continue end
+                        local root = char:FindFirstChild("HumanoidRootPart")
+                        if not root then continue end
+                        local args = {
+                            root.Position,
+                            lp.Character:WaitForChild("HumanoidRootPart"),
+                            Vector3.yAxis,
+                            Enum.Material.Plastic,
+                            {
+                                ExPressure = 250,
+                                DestroyJointRadiusPercent = 1,
+                                ExpRadius = 120,
+                                ExplosionDamagesTerrain = true,
+                                ExplosiveHit = true,
+                                ExplosionDamage = 250
+                            }
+                        }
+                        remote:FireServer(unpack(args))
+                    end
+                end
+            end)
+        else
+            if conn then
+                task.cancel(conn)
+            end
+        end
+    end,
+})
+
+Tabs.ExploitTab:Button({
+	Title = "acs1.7.5轰炸",
+	Callback = function()
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+
+while task.wait(0.05) do
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then continue end
+
+	local args = {
+		root.Position,
+		Instance.new("Part"),
+		Vector3.yAxis,
+		Enum.Material.Plastic,
+		{
+			ExPressure = 999999,
+			DestroyJointRadiusPercent = 1,
+			ExpRadius = math.huge,
+			ExplosionDamagesTerrain = true,
+			ExplosiveHit = true,
+			ExplosionDamage = math.huge
+		}
+	}
+	game:GetService("ReplicatedStorage").ACS_Engine.Eventos.Hit:FireServer(unpack(args))
+end
+	end 
+})
+
+Tabs.ExploitTab:Button({
+	Title = "ac6音乐播放",
+	Callback = function()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-FE-AC6-Music-Vulnerablity-59292"))()
+	end 
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 放置方块",
+
+Callback = function()
+
+local cFrame = CFrame.new(0,0,0)
+
+
+local Size = {
+ X = 9999,
+ Y = 9999,
+ Z = 9999
+}
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Breach:InvokeServer(3,{Fortified={},Destroyable=workspace},CFrame.new(),CFrame.new(),{CFrame=game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame*cFrame,Size=Size})
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 绕过方块限制",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage').ACS_Engine.Events.Refil:FireServer(game.Players.LocalPlayer.Character.ACS_Client.Kit.Fortifications, -99999999)
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 卡死服务器",
+
+Callback = function()
+
+while task.wait() do
+
+  for _, player in next, game.Players:GetPlayers() do
+     game:GetService("ReplicatedStorage")["ACS_Engine"].Events.Suppression:FireServer(player, 666, 666, 666)
+  end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 无限耐力",
+
+Callback = function()
+
+local cfg = require(game:GetService('ReplicatedStorage')['ACS_Engine'].GameRules.Config)
+cfg.EnableStamina = false
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 无坠落伤害",
+
+Callback = function()
+
+local cfg = require(game:GetService('ReplicatedStorage')['ACS_Engine'].GameRules.Config)
+cfg.EnableFallDamage = false
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 无跳跃冷却时间",
+
+Callback = function()
+
+local cfg = require(game:GetService('ReplicatedStorage')['ACS_Engine'].GameRules.Config)
+cfg.AntiBunnyHop = false
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 价值颠覆者",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Events.Refil:FireServer(game:GetService('Workspace')['virtual_rod']['ACS_Client'].Protecao.VestProtect.Value, 999)
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 2.0.1 卡服",
+
+Callback = function()
+
+while task.wait() do
+
+  for _, player in next, game.Players:GetPlayers() do
+      game:GetService('ReplicatedStorage')['ACS_Engine'].Events.Whizz:FireServer(player)
+  end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine fe 方块",
+
+Callback = function()
+
+--// Target
+local target = game:GetService('Players').LocalPlayer -- localplayer as default
+
+--// CFrame
+local cFrame = CFrame.new(0,0,0)
+
+--// Size
+local Size = {
+   X = 9999,
+   Y = 9999,
+   Z = 9999
+}
+
+--// Build
+for _,v in next, game.ReplicatedStorage:GetDescendants() do
+   if v.Name == 'Breach' and v:IsA('RemoteFunction') then
+       v:InvokeServer(3,{Fortified={},Destroyable=workspace},CFrame.new(),CFrame.new(),{CFrame=target.Character.HumanoidRootPart.CFrame*cFrame,Size=Size})
+   end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 方块",
+
+Callback = function()
+
+local cFrame = CFrame.new(0,0,0)
+
+
+local Size = {
+  X = 1,
+  Y = 1,
+  Z = 1
+}
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Breach:FireServer(3,{Fortified={},Destroyable=workspace},CFrame.new(),CFrame.new(),{CFrame=game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame*cFrame,Size=Size})
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 绕过方块限制",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Recarregar:FireServer(9999999,{ACS_Modulo={Variaveis={StoredAmmo = game.Players.LocalPlayer.Character.ACS_Client.Kit.Fortifications}}})
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 卡服",
+
+Callback = function()
+
+while task.wait() do
+
+   for i = 1, 30 do
+       game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.ServerBullet:FireServer(Vector3.new(0/0/0),Vector3.new(0/0/0))
+   end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 无敌",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Damage:FireServer(game.Players.LocalPlayer.Character.Humanoid, -math.huge, 0, 0)
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 回血",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Damage:FireServer(game.Players.LocalPlayer.Character.Humanoid, -50, 0, 0)
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 杀死所有人",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Damage:FireServer(game.Players.LocalPlayer.Character.Humanoid, math.huge, 0, 0)
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 卡服",
+
+Callback = function()
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Breach:FireServer(3,{Fortified={},Destroyable=workspace},CFrame.new(),CFrame.new(),{CFrame={},Size={}})
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 关闭服务器",
+
+Callback = function()
+
+while task.wait() do
+
+   for _, player in next, game.Players:GetPlayers() do
+      game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Suppression:FireServer(player, 666, 666, 666)
+   end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 VALUE 价值颠覆",
+
+Callback = function()
+
+local value = game.Players.LocalPlayer.Character.Saude.Variaveis.MLs
+
+game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Recarregar:FireServer(1,{ACS_Modulo={Variaveis={StoredAmmo = value}}})
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "ACS_Engine 1.7.5 卡服",
+
+Callback = function()
+
+while task.wait() do
+
+   for _, player in next, game.Players:GetPlayers() do
+       game:GetService('ReplicatedStorage')['ACS_Engine'].Eventos.Whizz:FireServer(player)
+   end
+end
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+
+Title = "memer",
+
+Callback = function()
+
+getgenv()["电脑UI大小"] = UDim2.new(0, 485,0, 565)
+getgenv()["手机UI大小"] = UDim2.new(0, 450,0, 275)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MeMeZLand/MeMeR/refs/heads/main/Loader.lua"))()
+
+end
+
+})
+
+Tabs.ExploitTab:Button({
+	Title = "免费通行证",
+	Callback = function()
+--[[ 	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk! ]] loadstring(game:HttpGet("https://raw.githubusercontent.com/rndmq/Serverlist/refs/heads/main/Server87"))()
+	end 
+})
+Window:SelectTab(1)

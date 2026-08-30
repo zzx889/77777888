@@ -1667,20 +1667,21 @@ do
 			end)
 		end,
 	})
-    ScriptHubTab:Section({Title="落叶脚本", TextSize=16})   -- 可选，用于分组
-ScriptHubTab:Button({
-    Title = "加载落叶脚本",
-    Color = BlueLight,   -- 或 BlueMain, Red 等预设颜色
-    Justify = "Center",
-    Icon = "paper-plane",  -- 可选图标
-    Callback = function()
-    pcall(function()
-        getgenv().LS = "落叶中心"  -- 若有需要
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/krlpl/Deciduous-center-LS/main/%E8%90%BD%E5%8F%B6%E4%B8%AD%E5%BF%83%E6%B7%B7%E6%B7%86.txt"))()
-        WindUI:Notify({Title="脚本中心", Content="落叶脚本加载成功", Duration=3})
-    end)
+    ScriptHubTab:Section({Title="落叶脚本", TextSize=16})
+	ScriptHubTab:Button({
+		Title = "加载落叶脚本",
+		Color = BlueLight,
+		Justify = "Center",
+		Icon = "paper-plane",
+		Callback = function()
+			pcall(function()
+				getgenv().LS = "落叶中心"
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/krlpl/Deciduous-center-LS/main/%E8%90%BD%E5%8F%B6%E4%B8%AD%E5%BF%83%E6%B7%B7%E6%B7%86.txt"))()
+				WindUI:Notify({Title="脚本中心", Content="落叶脚本加载成功", Duration=3})
+			end)
+		end
+	})
 end
-})
 -- ============== 设置【之前弄丢的】 ==============
 do
 	local SettingsTab = Window:Tab({
